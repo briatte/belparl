@@ -1,6 +1,7 @@
 
 # packages
 
+library(GGally)
 library(network)
 library(plyr)
 library(qdap)
@@ -14,9 +15,8 @@ dir.create("plots", showWarnings = FALSE)
 
 colors = c(
   "Agalev-Ecolo" = "#4DAF4A", # green; leftwing [ 47-50 ]
-  "ECOLO" = "#4DAF4A", # green; leftwing [ 47-50 ]
+  "Ecolo" = "#4DAF4A", # green; leftwing [ 47-50 ]
   "Ecolo-Groen" = "#4DAF4A", # green; leftwing [ 53 ]
-  "Ecolo-Groen!" = "#4DAF4A", # green; leftwing [ 52, fixed excl. mark ]
   "SP" = "#E41A1C", # red; Socialistische Partij Anders / Ostbelgien [ 47-50 ]
   "sp.a" = "#E41A1C", # red; SP Regionalverband Anders [ 50 ]
   "sp.a-spirit" = "#E41A1C", # red; SP Regionalverband Anders [ 51, fixed to 'sp.a' ]
@@ -32,9 +32,10 @@ colors = c(
   "Open Vld" = "#377EB8", # blue; libéral flamand [ 51, fixed to 'VLD' ]
   "MR" = "#377EB8", # blue; coalition libérale [ 50-51 ]
   "FDF" = "#F781BF", # pink, ex allié PRL [ 47 ]
-  "FDFPPW" = "#F781BF", # pink, ex allié PRL [ 48 ]
-  "PRLFDF" = "#F781BF", # pink, alliance PRL [ 49-50 ]
+  "PPW-FDF" = "#F781BF", # pink, ex allié PRL [ 48 ]
+  "PRL-FDF" = "#F781BF", # pink, alliance PRL [ 49-50 ]
   "VB" = "#A65628", # brown; far-right [ 48-51 ]
+  "FN" = "#A65628", # brown; far-right [ 51 ]
   "ROSSEM" = "#AAAAAA", # grey; Jean-Pierre Van Rossem
   "INDEP" = "#AAAAAA", # grey
   "VU" = "#FFFF33", # yellow; Volksunie, nationalistes
@@ -44,11 +45,11 @@ colors = c(
   "LDD" = "#984EA3" # violet; Jean-Marie Dedecker, libertarian
 )
 
-order = c("Agalev-Ecolo", "Ecolo-Groen", "ECOLO",
+order = c("Agalev-Ecolo", "Ecolo-Groen", "Ecolo",
           "PS", "SP", "sp.a", "CVP", "PSC", "CD&V", "cdH",
-          "PRL", "PVV", "VLD", "MR", "FDF", "FDFPPW", "PRLFDF",
+          "PRL", "PVV", "VLD", "MR", "FDF", "PPW-FDF", "PRL-FDF",
           "CD&V - N-VA", "N-VA", "VU", "VU-ID", "LDD",
-          "VB", "INDEP", "ROSSEM")
+          "VB", "FN", "INDEP", "ROSSEM")
 
 # scrapers
 

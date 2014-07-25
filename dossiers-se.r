@@ -91,28 +91,28 @@ if(!file.exists("senateurs.csv")) {
     h$parti = gsub(paste0(h$nom, " - "), "", h$parti)
     h$parti[ grepl("Correspondance", h$parti) ] = "CD&V" # Pieter de Crem bugfix
     h$parti[ grepl("Bureau", h$parti) ] = "PS" # Patrick Moriau bugfix
+    h$parti[ grepl("Privé", h$parti) ] = "sp.a" # Inga Verhaert bugfix
+    h$parti[ h$nom == "Herman De Croo" ] = "VLD" # since 2009 (?)
     cat(h$nom, "[", h$parti, "]", "\n")
     return(h)
     
   })
   b = rbind.fill(b)
-  
-  # match lower chamber
-  
-  b$parti[ b$parti %in% c("Vlaams Belang", "VL. BLOK") ] = "VB"
-  b$parti[ b$parti == "Agalev" ] = "Agalev-Ecolo"
-  b$parti[ b$parti == "Ecolo" ] = "ECOLO"
-  b$parti[ b$parti == "Groen!" ] = "Ecolo-Groen"
-  b$parti[ b$parti == "Indépendant" ] = "INDEP"
-  b$parti[ b$parti == "Open Vld" ] = "VLD"
-  b$parti[ b$parti == "SP.A-SPIRIT" ] = "sp.a"
-  b$parti[ b$parti == "PRL-FDF" ] = "PRLFDF"
-  
+
   write.csv(b, "senateurs.csv", row.names = FALSE)
   
 }
 
 b = read.csv("senateurs.csv", stringsAsFactors = FALSE)
+
+# match lower chamber
+
+b$parti[ b$parti %in% c("Vlaams Belang", "VL. BLOK") ] = "VB"
+b$parti[ b$parti == "Agalev" ] = "Agalev-Ecolo"
+b$parti[ b$parti %in% c("Groen", "Groen!") ] = "Ecolo-Groen"
+b$parti[ b$parti == "Indépendant" ] = "INDEP"
+b$parti[ b$parti == "Open Vld" ] = "VLD"
+b$parti[ b$parti == "SP.A-SPIRIT" ] = "sp.a"
 
 for(k in unique(a$legislature)) {
   
@@ -178,7 +178,7 @@ for(k in unique(a$legislature)) {
   
   ggsave(paste0("plots/network-se", k, ".pdf"), g, width = 12, height = 9)
   ggsave(paste0("plots/network-se", k, ".jpg"), g + theme(legend.position = "none"),
-         width = 12, height = 9)
+         width = 9, height = 9, dpi = 72)
   
   assign(paste0("net", k), n)
   

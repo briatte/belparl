@@ -160,6 +160,9 @@ for(j in dir) {
   edges$uid = gsub("!", "", edges$uid)
   edges$uid = gsub("\\[ sp.a(-spirit)?(+Vl.Pro)? \\]", "[ sp.a ]", edges$uid)
   edges$uid = gsub("\\[ Open Vld \\]", "[ VLD ]", edges$uid)
+  edges$uid = gsub("\\[ ECOLO \\]", "[ Ecolo ]", edges$uid)
+  edges$uid = gsub("\\[ PRLFDF \\]", "[ PRL-FDF ]", edges$uid)
+  edges$uid = gsub("\\[ FDFPPW \\]", "[ PPW-FDF ]", edges$uid)
   
   edges = data.frame(i = gsub("(.*)_(.*)", "\\1", edges$uid),
                      j = gsub("(.*)_(.*)", "\\2", edges$uid),
@@ -199,7 +202,7 @@ for(j in dir) {
   
   ggsave(gsub("csv", "pdf", gsub("sponsors", "plots/network", file)), g, width = 12, height = 9)
   ggsave(gsub("csv", "jpg", gsub("sponsors", "plots/network", file)), g + theme(legend.position = "none"),
-         width = 12, height = 9)
+         width = 9, height = 9, dpi = 72)
   
   assign(paste0("net", gsub("\\D", "", j)), n)
   
