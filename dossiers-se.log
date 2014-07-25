@@ -1,0 +1,127 @@
+Launched: 2014-07-25 20:05:54 
+
+Scraping legislature 49 ... 15 pages
+
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=1&END=100 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=101&END=200 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=201&END=300 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=301&END=400 ... 101 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=401&END=500 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=501&END=600 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=601&END=700 ... 101 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=701&END=800 ... 102 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=801&END=900 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=901&END=1000 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=1001&END=1100 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=1101&END=1200 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=1201&END=1300 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=1301&END=1400 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=1&START=1401&END=1435 ... 35 records
+Scraped 1991 rows over 680 dossiers in 20 minutes
+
+Scraping legislature 50 ... 17 pages
+
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=1&END=100 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=101&END=200 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=201&END=300 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=301&END=400 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=401&END=500 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=501&END=600 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=601&END=700 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=701&END=800 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=801&END=900 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=901&END=1000 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=1001&END=1100 ... 98 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=1101&END=1200 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=1201&END=1300 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=1301&END=1400 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=1401&END=1500 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=1501&END=1600 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=2&START=1601&END=1627 ... 26 records
+Scraped 1903 rows over 761 dossiers in 25.7 minutes
+
+Scraping legislature 51 ... 25 pages
+
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=1&END=100 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=101&END=200 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=201&END=300 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=301&END=400 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=401&END=500 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=501&END=600 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=601&END=700 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=701&END=800 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=801&END=900 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=901&END=1000 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=1001&END=1100 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=1101&END=1200 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=1201&END=1300 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=1301&END=1400 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=1401&END=1500 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=1501&END=1600 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=1601&END=1700 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=1701&END=1800 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=1801&END=1900 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=1901&END=2000 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=2001&END=2100 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=2101&END=2200 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=2201&END=2300 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=2301&END=2400 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=3&START=2401&END=2466 ... 65 records
+Scraped 4368 rows over 1493 dossiers in 29.2 minutes
+
+Scraping legislature 52 ... 18 pages
+
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=1&END=100 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=101&END=200 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=201&END=300 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=301&END=400 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=401&END=500 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=501&END=600 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=601&END=700 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=701&END=800 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=801&END=900 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=901&END=1000 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=1001&END=1100 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=1101&END=1200 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=1201&END=1300 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=1301&END=1400 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=1401&END=1500 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=1501&END=1600 ... 98 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=1601&END=1700 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=4&START=1701&END=1792 ... 92 records
+Scraped 3157 rows over 1279 dossiers in 18.4 minutes
+
+Scraping legislature 53 ... 29 pages
+
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=1&END=100 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=101&END=200 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=201&END=300 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=301&END=400 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=401&END=500 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=501&END=600 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=601&END=700 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=701&END=800 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=801&END=900 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=901&END=1000 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=1001&END=1100 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=1101&END=1200 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=1201&END=1300 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=1301&END=1400 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=1401&END=1500 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=1501&END=1600 ... 97 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=1601&END=1700 ... 98 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=1701&END=1800 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=1801&END=1900 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=1901&END=2000 ... 97 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=2001&END=2100 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=2101&END=2200 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=2201&END=2300 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=2301&END=2400 ... 98 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=2401&END=2500 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=2501&END=2600 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=2601&END=2700 ... 100 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=2701&END=2800 ... 99 records
+Parsing /www/?MIval=/publications/ListPub&LANG=fr&COLL=D&LEG=5&START=2801&END=2890 ... 88 records
+Scraped 5352 rows over 1905 dossiers in 31.1 minutes
+
+Ended: 2014-07-26 22:10:10 

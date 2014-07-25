@@ -62,7 +62,7 @@ if(!file.exists("dossiers-se.log")) {
     
   }
   
-  cat("\nEnded:", as.character(Sys.time()), "\n")
+  cat("Ended:", as.character(Sys.time()), "\n")
   sink()
 
 }
