@@ -8,17 +8,17 @@ root = "http://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=fr&cfm=L
 
 # scraper
 
-if(!file.exists("dossiers.log")) {
+if(!file.exists("dossiers-ch.log")) {
  
-  cat("Scraping raw data (be patient, takes round three hours)...\n")
+  cat("Scraping raw lower chamber data (be patient, takes ~ 3 hours)...\n")
 
-  sink("dossiers.log")
+  sink("dossiers-ch.log")
   cat("Launched:", as.character(Sys.time()), "\n\n")
   
   # do not add 54 just yet (not enough data) -- 2014-07-25
   for(i in 47:53) {
     
-    file = paste0("dossiers", i, ".csv")
+    file = paste0("dossiers-ch", i, ".csv")
     if(!file.exists(file)) {
       
       cat("Scraping legislature", i, "... ")
@@ -80,7 +80,7 @@ if(!file.exists("dossiers.log")) {
 
 # parser
 
-dir = dir(pattern = "dossiers\\d{2}.csv")
+dir = dir(pattern = "dossiers-ch\\d{2}.csv")
 for(j in dir) {
   
   file = gsub("dossiers", "sponsors", j)
@@ -164,8 +164,9 @@ for(j in dir) {
   edges = aggregate(w ~ uid, sum, data = edges)
 
   edges$uid = gsub("!", "", edges$uid)
-  edges$uid = gsub("sp.a(.*)", "sp.a", edges$uid)
-  edges$uid = gsub("(.*)VLD$|(.*)Vld$", "VLD", edges$uid)
+  edges$uid = gsub("\\[ sp.a(-spirit)?(+Vl.Pro)? \\]", "[ sp.a ]", edges$uid)
+  edges$uid = gsub("\\[ Open Vld \\]", "[ VLD ]", edges$uid)
+  print(unique(edges$uid))
   
   edges = data.frame(i = gsub("(.*)_(.*)", "\\1", edges$uid),
                      j = gsub("(.*)_(.*)", "\\2", edges$uid),
@@ -252,6 +253,6 @@ for(j in dir) {
   
 }
 
-save(list = ls(pattern = "net\\d{2}"), file = "networks.rda")
+save(list = ls(pattern = "net\\d{2}"), file = "networks-ch.rda")
 
 # job's done
