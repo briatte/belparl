@@ -1,9 +1,9 @@
-library(network)
-library(XML)
+# scraper
 
 if(!file.exists("dossiers-se.log")) {
   
-  cat("Scraping raw upper chamber data (be patient, takes ~ £££ hours)...\n")
+  root = "http://www.senate.be"
+  cat("Scraping raw upper chamber data (be patient, takes ~ 13 hours)...\n")
 
   sink("dossiers-se.log")
   cat("Launched:", as.character(Sys.time()), "\n\n")
@@ -25,7 +25,7 @@ if(!file.exists("dossiers-se.log")) {
         
         cat("Parsing", i, "... ")
         
-        hh = htmlParse(paste0("http://www.senate.be", i))
+        hh = htmlParse(paste0(root, i))
         hh = xpathSApply(hh, "//a[contains(@href, 'NR=')]/@href")
         
         cat(length(hh), "records\n")
@@ -33,7 +33,7 @@ if(!file.exists("dossiers-se.log")) {
         
         for(j in hh) {
           
-          t = htmlParse(paste0("http://www.senate.be", j))
+          t = htmlParse(paste0(root j))
           u = xpathSApply(t, "//a[contains(@href, 'showSenator')]/@href")
           
           if(length(u))
@@ -64,4 +64,4 @@ if(!file.exists("dossiers-se.log")) {
 
 }
 
-# done
+# job's done

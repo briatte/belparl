@@ -1,15 +1,8 @@
-library(network)
-library(qdap)
-library(XML)
-
-dir.create("plots", showWarnings = FALSE)
-
-root = "http://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=fr&cfm=Listdocument.cfm?legislat="
-
 # scraper
 
 if(!file.exists("dossiers-ch.log")) {
  
+  root = "http://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=fr&cfm=Listdocument.cfm?legislat="
   cat("Scraping raw lower chamber data (be patient, takes ~ 3 hours)...\n")
 
   sink("dossiers-ch.log")
@@ -166,7 +159,6 @@ for(j in dir) {
   edges$uid = gsub("!", "", edges$uid)
   edges$uid = gsub("\\[ sp.a(-spirit)?(+Vl.Pro)? \\]", "[ sp.a ]", edges$uid)
   edges$uid = gsub("\\[ Open Vld \\]", "[ VLD ]", edges$uid)
-  print(unique(edges$uid))
   
   edges = data.frame(i = gsub("(.*)_(.*)", "\\1", edges$uid),
                      j = gsub("(.*)_(.*)", "\\2", edges$uid),
