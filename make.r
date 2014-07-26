@@ -1,6 +1,7 @@
 
 # packages
 
+library(igraph)
 library(ggplot2)
 library(GGally) # network plots
 library(network)
@@ -74,6 +75,7 @@ qplot(data = melt(m, c("id", "ch", "legislature")),
   theme(panel.grid = element_blank())
 
 ggsave("plots/modularity.pdf", width = 12, height = 6)
+ggsave("plots/modularity.png", width = 12, height = 6, dpi = 72)
 
 # qplot(data = m, x = legislature, y = ratio, group = ch,
 #       geom = c("line", "point")) +

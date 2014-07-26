@@ -135,7 +135,7 @@ if(!file.exists("networks-se.rda") | update) {
       if(length(d)) {
         d = data.frame(i = gsub("(.*)_(.*)", "\\1", d),
                        j = gsub("(.*)_(.*)", "\\2", d),
-                       w = 1 / length(d))
+                       w = length(d))
         return(d)
       } else {
         return(data.frame())
@@ -145,7 +145,9 @@ if(!file.exists("networks-se.rda") | update) {
     
     edges = rbind.fill(edges)
     edges$uid = apply(edges, 1, function(x) paste0(sort(x[ 1:2 ]), collapse = "_"))
-    edges = aggregate(w ~ uid, sum, data = edges)
+
+    # using raw counts as weights
+    edges = aggregate(w ~ uid, length, data = edges)
     
     edges = data.frame(i = gsub("(.*)_(.*)", "\\1", edges$uid),
                        j = gsub("(.*)_(.*)", "\\2", edges$uid),

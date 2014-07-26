@@ -94,6 +94,9 @@ if(!file.exists("networks-ch.rda") | update) {
         dd = subset(d, uid == i & !grepl("^NL|NL$", d$variable))
         # cat("Parsing dossier uid", i)
         
+        topic = unique(dd$value[which(grepl("Eurovoc", dd$variable)) + 2])
+        topic = paste0(topic, collapse = ",")
+        
         sd = which(dd$variable == "Document principal")
         dd = dd[ min(sd):nrow(dd), ]
         
@@ -118,7 +121,7 @@ if(!file.exists("networks-ch.rda") | update) {
         }
         
         if(nrow(au) > 1 & !any(grepl("ZZZ", au$name))) {
-          authors = rbind(authors, au)
+          authors = rbind(authors, cbind(au, topic))
           # if(nrow(au) > 1)
           #   cat(":", sum(au$status == "author"), "author(s)", sum(au$status == "cosponsor"), "cosponsor(s)\n")
           # else
@@ -147,7 +150,7 @@ if(!file.exists("networks-ch.rda") | update) {
       if(length(d)) {
         d = data.frame(i = gsub("(.*)_(.*)", "\\1", d),
                        j = gsub("(.*)_(.*)", "\\2", d),
-                       w = 1 / length(d))
+                       w = length(d))
         return(d)
       } else {
         return(data.frame())
@@ -156,9 +159,11 @@ if(!file.exists("networks-ch.rda") | update) {
     })
     
     edges = rbind.fill(edges)
-    edges$uid = apply(edges, 1, function(x) paste0(sort(x[1:2]), collapse = "_"))
-    edges = aggregate(w ~ uid, sum, data = edges)
+    edges$uid = apply(edges, 1, function(x) paste0(sort(x[ 1:2 ]), collapse = "_"))
     
+    # using raw counts as weights
+    edges = aggregate(w ~ uid, length, data = edges)
+
     # raw party values on edges
     print(table(unlist(strsplit(gsub("(.*) \\[ (.*) \\]_(.*) \\[ (.*) \\]",
                                      "\\2;\\4", edges$uid), ";"))))
