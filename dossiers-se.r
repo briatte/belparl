@@ -34,6 +34,9 @@ if(!file.exists("dossiers-se.log")) {
         for(j in hh) {
           
           t = try(htmlParse(paste0(root, j)))
+          
+          topic = gsub("(  )+( )?", ",", xpathSApply(t, "//table[2]/tr/td", xmlValue))
+          topic = toupper(gsub(",$", "", topic))
           if(!"try-error" %in% class(t)) {
             
             u = xpathSApply(t, "//a[contains(@href, 'showSenator')]/@href")
@@ -43,6 +46,7 @@ if(!file.exists("dossiers-se.log")) {
                                       dossier = sprintf("%04.0f", as.numeric(gsub("(.*)NR=(\\d+)(.*)", "\\2", j))),
                                       sid = gsub("(.*)ID=(\\d+)(.*)", "\\2", u),
                                       name = xpathSApply(t, "//a[contains(@href, 'showSenator')]", xmlValue),
+                                      topic,
                                       stringsAsFactors = FALSE))
           }
           
