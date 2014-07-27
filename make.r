@@ -5,11 +5,13 @@ rm(list = ls())
 
 library(igraph)
 library(ggplot2)
-library(GGally) # network plots
+library(GGally)  # network plots
 library(network)
 library(plyr)
-library(qdap) # clean strings
-library(XML)  # parse XPath
+library(qdap)   # clean strings
+library(rgexf)  # GEXF
+library(tnet)
+library(XML)    # parse XPath
 
 # folders
 
@@ -52,10 +54,10 @@ order = c("ECOLO", "SOC-F", "SOC-V", "LIB-F", "LIB-V",
 
 # scrapers
 
-update = FALSE
+update = TRUE
 
-source("dossiers-ch.r")
+# source("dossiers-ch.r")
 source("dossiers-se.r")
-source("plots.r")
+# source("plots.r")
 
 # kthxbye

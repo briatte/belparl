@@ -1,10 +1,49 @@
+# scrape full MP listing
+
+if(!file.exists("deputes.csv")) {
+  
+  deputes = data.frame()
+  for(i in 48:54) {
+    
+    cat("Parsing legislature", i, "... ")
+    h = htmlParse(paste0("http://www.lachambre.be/kvvcr/showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvlist54.cfm?legis=", i, "&today=n"))
+    h = xpathSApply(h, "//a[contains(@href, 'key=')]/@href")
+    cat(length(h), "pages\n")
+    
+    for(j in h) {
+      
+      hh = htmlParse(paste0("http://www.lachambre.be/kvvcr/", j))
+      hh = data.frame(legislature = i,
+                      nom = scrubber(xpathSApply(hh, "//div[@id='story']/*/h2", xmlValue)),
+                      photo = xpathSApply(hh, "//img[contains(@src, 'cv/')]/@src"),
+                      url = j,
+                      bio = xpathSApply(hh, "//div[@id='story']/table[2]/tr[@valign='top'][2]/td/p", xmlValue))
+      deputes = rbind(deputes, hh)
+      cat(".")
+      
+    }
+    
+    cat("\n")
+    
+  }
+  
+  write.csv(deputes, "deputes.csv", row.names = FALSE)
+  
+}
+
+deputes = read.csv("deputes.csv", stringsAsFactors = FALSE)
+deputes$bio = scrubber(gsub("▀ ", "", deputes$bio))
+
+# name fixes
+deputes$nom[ deputes$nom == "Sabien Battheu" ] = "Sabien Lahaye-Battheu"
+
 # scraper
 
 if(!file.exists("dossiers-ch.log")) {
- 
+  
   root = "http://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=fr&cfm=Listdocument.cfm?legislat="
   cat("Scraping raw lower chamber data (be patient, takes a few hours)...\n")
-
+  
   sink("dossiers-ch.log")
   cat("Launched:", as.character(Sys.time()), "\n\n")
   
@@ -163,11 +202,11 @@ if(!file.exists("networks-ch.rda") | update) {
     
     # using raw counts as weights
     edges = aggregate(w ~ uid, length, data = edges)
-
+    
     # raw party values on edges
     print(table(unlist(strsplit(gsub("(.*) \\[ (.*) \\]_(.*) \\[ (.*) \\]",
                                      "\\2;\\4", edges$uid), ";"))))
-
+    
     edges$uid = gsub("!", "", edges$uid)
     edges$uid = gsub("\\[ (Agalev-)?(ECOLO|Ecolo)(-Groen)? \\]", "[ ECOLO ]", edges$uid)
     # edges$uid = gsub("\\[ (PS|SP|sp.a)(-spirit)?(\\+Vl\\.Pro)? \\]", "[ SOC ]", edges$uid)
@@ -189,18 +228,49 @@ if(!file.exists("networks-ch.rda") | update) {
     
     n = network(edges[, 1:2 ], directed = FALSE)
     n %n% "title" = paste("Chambre, législature", gsub("\\D", "", k))
+    
+    n %v% "sid" = network.vertex.names(n)
+    n %v% "party" = gsub("(.*) \\[ (.*) \\]", "\\2", network.vertex.names(n))
 
+    network.vertex.names(n) = gsub("(.*) \\[ (.*) \\]", "\\1", network.vertex.names(n))
+    
+    network::set.edge.attribute(n, "source", edges[, 1])
+    network::set.edge.attribute(n, "target", edges[, 2])
+    
+    network::set.edge.attribute(n, "weight", edges[, 3])
+    network::set.edge.attribute(n, "alpha",
+                                as.numeric(cut(n %e% "weight", c(1:4, Inf),
+                                               include.lowest = TRUE)) / 5)
+    
+    # subset
+    
+    found = gsub("(.*) \\[ (.*) \\]", "\\1", network.vertex.names(n))
+    known = deputes$nom[ deputes$legislature == as.numeric(gsub("\\D", "", k)) ]
+    
+    if(length(known)) {
+      
+      cat("\nDeleting", sum(!found %in% known), "unrecognized nodes\n")
+      
+      if(sum(!found %in% known) > 0) {
+        
+        cat(paste0(found[ !found %in% known ], collapse = ", "), "\n")
+        network::delete.vertices(n, which(!found %in% known))
+        
+      }
+      
+    }
+    
     # modularity
     
     nn = graph.edgelist(as.matrix(edges[, 1:2 ]), directed = FALSE)
     E(nn)$weight = edges[, 3]
-
+    
     i = gsub("(.*) \\[ (.*) \\]", "\\2", V(nn)$name)
     i[ i %in% c("ROSSEM", "LDD", "FN", "", "INDEP") ] = NA # very small groups
     
     nn = nn - which(is.na(i))
     i = as.numeric(factor(i[ !is.na(i) ]))
-
+    
     n %n% "modularity" = modularity(nn, membership = i, weights = E(nn)$weight)
     
     walktrap = lapply(1:50, function(x) walktrap.community(nn, steps = x))
@@ -208,27 +278,12 @@ if(!file.exists("networks-ch.rda") | update) {
     # max. partition
     maxwalks = order(sapply(walktrap, modularity), decreasing = TRUE)[1]
     walktrap = walktrap[[ maxwalks ]]
-
+    
     n %n% "modularity_walktrap" = modularity(walktrap)
     
     louvain = multilevel.community(nn)
     
     n %n% "modularity_louvain" = modularity(louvain)
-
-    n %v% "party" = gsub("(.*) \\[ (.*) \\]", "\\2", network.vertex.names(n))
-    
-    network.vertex.names(n) = gsub("(.*) \\[ (.*) \\]", "\\1", network.vertex.names(n))
-    
-    edges[, 1] = gsub("(.*) \\[ (.*) \\]", "\\1", edges[, 1])
-    network::set.edge.attribute(n, "source", edges[, 1])
-    
-    edges[, 2] = gsub("(.*) \\[ (.*) \\]", "\\1", edges[, 2])
-    network::set.edge.attribute(n, "target", edges[, 2])
-    
-    network::set.edge.attribute(n, "weight", edges[, 3])
-    network::set.edge.attribute(n, "alpha",
-                                as.numeric(cut(n %e% "weight", c(1:4, Inf),
-                                               include.lowest = TRUE)) / 5)
     
     # weighted adjacency matrix to tnet
     tnet = as.tnet(as.sociomatrix(n, attrname = "weight"), type = "weighted one-mode tnet")
@@ -253,14 +308,14 @@ if(!file.exists("networks-ch.rda") | update) {
     party = n %v% "party"
     names(party) = network.vertex.names(n)
     
-    i = colors[ party[ n %e% "source" ] ]
-    j = colors[ party[ n %e% "target" ] ]
+    i = colors[ gsub("(.*) \\[ (.*) \\]", "\\2", n %e% "source") ]
+    j = colors[ gsub("(.*) \\[ (.*) \\]", "\\2", n %e% "target") ]
     
     party = as.vector(i)
     party[ i != j ] = "#AAAAAA"
     
     print(table(n %v% "party", exclude = NULL))
-
+    
     n %v% "size" = as.numeric(cut(n %v% "degree", quantile(n %v% "degree"), include.lowest = TRUE))
     g = suppressWarnings(ggnet(n, size = 0, segment.alpha = 1/2,
                                segment.color = party) +
@@ -277,6 +332,79 @@ if(!file.exists("networks-ch.rda") | update) {
            width = 9, height = 9, dpi = 72)
     
     assign(paste0("net_ch", gsub("\\D", "", k)), n)
+    
+    # gexf
+    
+    gexf = paste0("net_ch", gsub("\\D", "", k), ".gexf")
+    if(!file.exists(gexf) & gsub("\\D", "", k) > 47) {
+            
+      rgb = t(col2rgb(colors[ names(colors) %in% as.character(n %v% "party") ]))
+      mode = "fruchtermanreingold"
+      meta = list(creator = "rgexf",
+                  description = paste0(mode, " placement"),
+                  keywords = "Parliament, Belgium")
+      
+      people = merge(data.frame(sid = paste(network.vertex.names(n), "[", n %v% "party", "]"),
+                                nom = network.vertex.names(n), 
+                                party = n %v% "party", 
+                                degree = n %v% "degree",
+                                distance = n %v% "distance",
+                                stringsAsFactors = FALSE),
+                     subset(deputes,
+                            legislature == as.numeric(gsub("\\D", "", k)) &
+                              nom %in% network.vertex.names(n)))
+      
+      node.att = c("nom", "party", "photo", "url", "bio", "degree", "distance")
+      node.att = cbind(label = people$sid, people[, node.att ])
+      
+      people = data.frame(id = as.numeric(factor(people$sid)),
+                          label = people$sid,
+                          stringsAsFactors = FALSE)
+
+      relations = data.frame(
+        source = as.numeric(factor(n %e% "source", levels = levels(factor(people$label)))),
+        target = as.numeric(factor(n %e% "target", levels = levels(factor(people$label)))),
+        weight = n %e% "weight"
+      )
+      relations = na.omit(relations)
+      
+      nodecolors = lapply(node.att$party, function(x)
+        data.frame(r = rgb[x, 1], g = rgb[x, 2], b = rgb[x, 3], a = .3 ))
+      nodecolors = as.matrix(rbind.fill(nodecolors))
+      
+      net = as.matrix.network.adjacency(n)
+      
+      # placement method (Kamada-Kawai best at separating at reasonable distances)
+      position = paste0("gplot.layout.", mode)
+      if(!exists(position)) stop("Unsupported placement method '", position, "'")
+      
+      position = do.call(position, list(net, NULL))
+      position = as.matrix(cbind(position, 1))
+      colnames(position) = c("x", "y", "z")
+      
+      # compress floats
+      position[, "x"] = round(position[, "x"], 2)
+      position[, "y"] = round(position[, "y"], 2)
+      
+      write.gexf(nodes = people,
+                 edges = relations[, -3],
+                 edgesWeight = relations[, 3],
+                 nodesAtt = data.frame(label = as.character(node.att$label),
+                                       name = node.att$nom,
+                                       party = node.att$party,
+                                       photo = node.att$photo,
+                                       link = gsub("(.*)key=(\\d+)(.*)", "\\2", node.att$url),
+                                       distance = node.att$distance,
+                                       # bio = node.att$bio,
+                                       stringsAsFactors = FALSE),
+                 nodesVizAtt = list(position = position,
+                                    color = nodecolors,
+                                    size = round(node.att$degree)),
+                 # edgesVizAtt = list(size = relations[, 3]),
+                 defaultedgetype = "undirected", meta = meta,
+                 output = gexf)
+      
+    }
     
   }
   

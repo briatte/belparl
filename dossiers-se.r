@@ -196,8 +196,8 @@ if(!file.exists("networks-se.rda") | update) {
                                 as.numeric(cut(n %e% "weight", c(1:4, Inf),
                                                include.lowest = TRUE)) / 5)
 
-    network::set.edge.attribute(n, "source", b[ n %e% "source", "nom" ])
-    network::set.edge.attribute(n, "target", b[ n %e% "target", "nom" ])
+#     network::set.edge.attribute(n, "source", b[ n %e% "source", "nom" ])
+#     network::set.edge.attribute(n, "target", b[ n %e% "target", "nom" ])
 
     # weighted adjacency matrix to tnet
     tnet = as.tnet(as.sociomatrix(n, attrname = "weight"), type = "weighted one-mode tnet")
@@ -220,6 +220,7 @@ if(!file.exists("networks-se.rda") | update) {
     n %n% "clustering" = clustering_w(tnet) # global
     
     n %v% "party" = b[ network.vertex.names(n), "parti" ]
+    n %v% "sid" = network.vertex.names(n)
     network.vertex.names(n) = b[ network.vertex.names(n), "nom" ]
     
     party = n %v% "party"
@@ -249,6 +250,74 @@ if(!file.exists("networks-se.rda") | update) {
            width = 9, height = 9, dpi = 72)
     
     assign(paste0("net_se", k), n)
+    
+    # gexf
+    
+    gexf = paste0("net_se", k, ".gexf")
+    if(!file.exists(gexf)) {
+            
+      rgb = t(col2rgb(colors[ names(colors) %in% as.character(n %v% "party") ]))
+      mode = "fruchtermanreingold"
+      meta = list(creator = "rgexf",
+                  description = paste0(mode, " placement"),
+                  keywords = "Parliament, Belgium")
+      
+      people = data.frame(sid = n %v% "sid",
+                          nom = network.vertex.names(n), 
+                          party = n %v% "party", 
+                          degree = n %v% "degree",
+                          distance = n %v% "distance",
+                          stringsAsFactors = FALSE)
+      
+      node.att = c("nom", "party", "sid", "degree", "distance")
+      node.att = cbind(label = people$sid, people[, node.att ])
+      
+      people = data.frame(id = as.numeric(factor(people$sid)),
+                          label = people$sid,
+                          stringsAsFactors = FALSE)
+      
+      relations = data.frame(
+        source = as.numeric(factor(n %e% "source", levels = levels(factor(people$label)))),
+        target = as.numeric(factor(n %e% "target", levels = levels(factor(people$label)))),
+        weight = n %e% "weight"
+      )
+      relations = na.omit(relations)
+      
+      nodecolors = lapply(node.att$party, function(x)
+        data.frame(r = rgb[x, 1], g = rgb[x, 2], b = rgb[x, 3], a = .3 ))
+      nodecolors = as.matrix(rbind.fill(nodecolors))
+      
+      net = as.matrix.network.adjacency(n)
+      
+      # placement method (Kamada-Kawai best at separating at reasonable distances)
+      position = paste0("gplot.layout.", mode)
+      if(!exists(position)) stop("Unsupported placement method '", position, "'")
+      
+      position = do.call(position, list(net, NULL))
+      position = as.matrix(cbind(position, 1))
+      colnames(position) = c("x", "y", "z")
+      
+      # compress floats
+      position[, "x"] = round(position[, "x"], 2)
+      position[, "y"] = round(position[, "y"], 2)
+      
+      write.gexf(nodes = people,
+                 edges = relations[, -3],
+                 edgesWeight = relations[, 3],
+                 nodesAtt = data.frame(label = as.character(node.att$label),
+                                       name = node.att$nom,
+                                       party = node.att$party,
+                                       sid = gsub("\\D", "", node.att$sid),
+                                       distance = node.att$distance,
+                                       stringsAsFactors = FALSE),
+                 nodesVizAtt = list(position = position,
+                                    color = nodecolors,
+                                    size = round(node.att$degree)),
+                 # edgesVizAtt = list(size = relations[, 3]),
+                 defaultedgetype = "undirected", meta = meta,
+                 output = gexf)
+      
+    }
     
   }
   
