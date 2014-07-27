@@ -1,4 +1,6 @@
 
+rm(list = ls())
+
 # packages
 
 library(igraph)
@@ -54,34 +56,6 @@ update = FALSE
 
 source("dossiers-ch.r")
 source("dossiers-se.r")
-
-m = sapply(mget(ls(pattern = "net_(ch|se)")), function(x) x %n% "modularity")
-w = sapply(mget(ls(pattern = "net_(ch|se)")), function(x) x %n% "modularity_walktrap")
-l = sapply(mget(ls(pattern = "net_(ch|se)")), function(x) x %n% "modularity_louvain")
-m = cbind(names(m), m, w, l)
-m = data.frame(id = m[, 1],
-               ch = ifelse(substr(m[, 1], 5, 6) == "se", "Sénat", "Chambre"),
-               legislature = gsub("\\D", "", m[, 1]),
-               Empirical.Modularity = as.numeric(m[, 2]),
-               Maximized.Walktrap = as.numeric(m[, 3]),
-               Maximized.Louvain = as.numeric(m[, 4]))
-m$Maximization.Ratio = m$Empirical.Modularity / apply(m[, 5:6 ], 1, max)
-
-qplot(data = melt(m, c("id", "ch", "legislature")),
-      x = legislature, group = ch, y = value, geom = c("line", "point")) +
-  facet_grid(ch ~ variable) +
-  theme_linedraw(16) +
-  labs(y = NULL, x = NULL) +
-  theme(panel.grid = element_blank())
-
-ggsave("plots/modularity.pdf", width = 12, height = 6)
-ggsave("plots/modularity.png", width = 12, height = 6, dpi = 72)
-
-# qplot(data = m, x = legislature, y = ratio, group = ch,
-#       geom = c("line", "point")) +
-#   facet_grid(. ~ ch) +
-#   theme_linedraw(16) +
-#   labs(y = "Empirical / Maximized\n", x = NULL) +
-#   theme(legend.position = "none", panel.grid = element_blank())
+source("plots.r")
 
 # kthxbye

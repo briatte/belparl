@@ -280,7 +280,7 @@ if(!file.exists("networks-ch.rda") | update) {
     
   }
   
-  save(list = ls(pattern = "net_se\\d{2}"), file = "networks-ch.rda")
+  save(list = ls(pattern = "net_ch\\d{2}"), file = "networks-ch.rda")
   
 }
 
