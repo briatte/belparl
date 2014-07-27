@@ -226,8 +226,8 @@ if(!file.exists("networks-se.rda") | update) {
     party = n %v% "party"
     names(party) = network.vertex.names(n)
     
-    i = colors[ party[ n %e% "source" ] ]
-    j = colors[ party[ n %e% "target" ] ]
+    i = colors[ b[ n %e% "source", "parti" ] ]
+    j = colors[ b[ n %e% "target", "parti" ] ]
     
     party = as.vector(i)
     party[ i != j ] = "#AAAAAA"
@@ -254,7 +254,7 @@ if(!file.exists("networks-se.rda") | update) {
     # gexf
     
     gexf = paste0("net_se", k, ".gexf")
-    if(!file.exists(gexf)) {
+    if(!file.exists(gexf) & export) {
             
       rgb = t(col2rgb(colors[ names(colors) %in% as.character(n %v% "party") ]))
       mode = "fruchtermanreingold"

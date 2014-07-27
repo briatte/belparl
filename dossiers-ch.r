@@ -336,7 +336,7 @@ if(!file.exists("networks-ch.rda") | update) {
     # gexf
     
     gexf = paste0("net_ch", gsub("\\D", "", k), ".gexf")
-    if(!file.exists(gexf) & gsub("\\D", "", k) > 47) {
+    if(!file.exists(gexf) & gsub("\\D", "", k) > 47 & export) {
             
       rgb = t(col2rgb(colors[ names(colors) %in% as.character(n %v% "party") ]))
       mode = "fruchtermanreingold"

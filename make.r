@@ -55,9 +55,10 @@ order = c("ECOLO", "SOC-F", "SOC-V", "LIB-F", "LIB-V",
 # scrapers
 
 update = TRUE
+export = FALSE
 
-# source("dossiers-ch.r")
+source("dossiers-ch.r")
 source("dossiers-se.r")
-# source("plots.r")
+source("plots.r")
 
 # kthxbye
