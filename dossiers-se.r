@@ -190,10 +190,34 @@ if(!file.exists("networks-se.rda") | update) {
     
     network::set.edge.attribute(n, "source", as.character(edges[, 1]))
     network::set.edge.attribute(n, "target", as.character(edges[, 2]))
-    network::set.edge.attribute(n, "weight", edges[, 3])
     
+    network::set.edge.attribute(n, "weight", edges[, 3])
+    network::set.edge.attribute(n, "alpha",
+                                as.numeric(cut(n %e% "weight", c(1:4, Inf),
+                                               include.lowest = TRUE)) / 5)
+
     network::set.edge.attribute(n, "source", b[ n %e% "source", "nom" ])
     network::set.edge.attribute(n, "target", b[ n %e% "target", "nom" ])
+
+    # weighted adjacency matrix to tnet
+    tnet = as.tnet(as.sociomatrix(n, attrname = "weight"), type = "weighted one-mode tnet")
+    
+    # weighted degree and distance
+    wdeg = as.data.frame(degree_w(tnet, measure = "degree"))
+    dist = distance_w(tnet)
+    wdeg$distance = NA
+    wdeg[ attr(dist, "nodes"), ]$distance = colMeans(dist, na.rm = TRUE)
+    wdeg = cbind(wdeg, clustering_local_w(tnet)[, 2])
+    names(wdeg) = c("node", "degree", "distance", "clustering")
+    
+    n %v% "degree" = wdeg$degree
+    n %n% "degree" = mean(wdeg$degree, na.rm = TRUE)
+    
+    n %v% "distance" = wdeg$distance
+    n %n% "distance" = mean(wdeg$distance, na.rm = TRUE)
+    
+    n %v% "clustering" = wdeg$clustering    # local
+    n %n% "clustering" = clustering_w(tnet) # global
     
     n %v% "party" = b[ network.vertex.names(n), "parti" ]
     network.vertex.names(n) = b[ network.vertex.names(n), "nom" ]
@@ -208,11 +232,17 @@ if(!file.exists("networks-se.rda") | update) {
     party[ i != j ] = "#AAAAAA"
     
     print(table(n %v% "party", exclude = NULL))
+
+    n %v% "size" = as.numeric(cut(n %v% "degree", quantile(n %v% "degree"), include.lowest = TRUE))
     g = suppressWarnings(ggnet(n, size = 0, segment.alpha = 1/2,
                                segment.color = party) +
-                           geom_point(size = 9, alpha = 1/3, aes(color = n %v% "party")) +
-                           geom_point(size = 6, alpha = 1/2, aes(color = n %v% "party")) +
-                           scale_color_manual("", values = colors, breaks = order))
+                           geom_point(alpha = 1/3, aes(size = n %v% "size", color = n %v% "party")) +
+                           geom_point(alpha = 1/2, aes(size = min(n %v% "size"), color = n %v% "party")) +
+                           scale_size_continuous(range = c(6, 12)) +
+                           scale_color_manual("", values = colors, breaks = order) +
+                           theme(legend.key.size = unit(1, "cm"),
+                                 legend.text = element_text(size = 16)) +
+                           guides(size = FALSE, color = guide_legend(override.aes = list(alpha = 1/3, size = 6))))
     
     ggsave(paste0("plots/network-se", k, ".pdf"), g, width = 12, height = 9)
     ggsave(paste0("plots/network-se", k, ".jpg"), g + theme(legend.position = "none"),
