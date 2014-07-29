@@ -183,19 +183,26 @@ if(!file.exists("networks-ch.rda") | update) {
                               cbind(uid = paste0(i, "-", n),
                                     dossier = i, document = n,
                                     type, topic, status,
+                                    n_au = length(a),
                                     authors = paste0(na.omit(au[ !grepl("ZZZ|0", au) ]), collapse = ";"),
                                     cosponsors = paste0(na.omit(cs[ !grepl("ZZZ|0", cs) ]), collapse = ";")))
               
             } else if(length(a) == 1) {
               
               # cat("\n -", type, ":", a)
+              authors = rbind(authors,
+                              cbind(uid = paste0(i, "-", n),
+                                    dossier = i, document = n,
+                                    type, topic, status, n_au = 1,
+                                    authors = a,
+                                    cosponsors = ""))
               
             } else {
               
               # cat("\n -", type, ":", gsub("\\d|\\[|\\]|ZZZ|\\s", "", au))
               
             }
-            
+                        
           }
         
         # cat("\n\n")
@@ -220,13 +227,13 @@ if(!file.exists("networks-ch.rda") | update) {
     
     print(table(a$type, a$status, exclude = NULL))
 
-    a = subset(a, type == "PROPOSITIONS")
+    a = subset(a, type == "PROPOSITIONS" & n_au > 1)
+    cat("Subsetting to", nrow(a), "cosponsored bills\n")
 
     # remove buggy dossier(s) [ 52 ]
     a = subset(a, uid != "52K1939")
 
     # edge list
-    
     edges = lapply(unique(a$uid), function(i) {
       
       d = na.omit(c(a$authors[ a$uid == i ], a$cosponsors[ a$uid == i ]))
