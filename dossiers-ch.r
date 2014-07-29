@@ -134,6 +134,10 @@ if(!file.exists("networks-ch.rda") | update) {
         dd = subset(d, uid == i & !grepl("^NL|NL$", d$variable))
         # cat("Parsing dossier", i)
         
+        status = dd$value[which(grepl("Etat d'avancement", dd$variable)) + 1]
+        if(!length(status))
+          status = NA
+
         topic = unique(dd$value[which(grepl("Eurovoc", dd$variable)) + 2])
         topic = paste0(topic, collapse = ",")
         
@@ -178,7 +182,7 @@ if(!file.exists("networks-ch.rda") | update) {
               authors = rbind(authors,
                               cbind(uid = paste0(i, "-", n),
                                     dossier = i, document = n,
-                                    type, topic,
+                                    type, topic, status,
                                     authors = paste0(na.omit(au[ !grepl("ZZZ|0", au) ]), collapse = ";"),
                                     cosponsors = paste0(na.omit(cs[ !grepl("ZZZ|0", cs) ]), collapse = ";")))
               
@@ -204,13 +208,17 @@ if(!file.exists("networks-ch.rda") | update) {
     }
     
     a = read.csv(file, stringsAsFactors = FALSE)
-    
+
     a$type[ grepl("AMENDEMENT|DECISION DE NE PAS AMENDER", a$type) ] = "AMENDEMENTS"
     a$type[ grepl("AUTRES|AVIS|CORRIGE|CONCLUSIONS|DECISION|ERRATA|PROJET|RAPPORT|ANNEXE|TEXTE", a$type)
             & a$type != "PROPOSITION DE LOI" ] = "AUTRES"
     a$type[ grepl("PROPOSITION", a$type) ] = "PROPOSITIONS"
 
-    print(table(a$type, exclude = NULL))
+    a$status[ grepl("ADOPTE|TERMINE", a$status) ] = "ADOPTE"
+    a$status[ grepl("CADUQUE|REJETE", a$status) ] = "REJETE"
+    a$status[ grepl("SANS OBJET|RETIRE", a$status) ] = NA
+    
+    print(table(a$type, a$status, exclude = NULL))
 
     a = subset(a, type == "PROPOSITIONS")
 
@@ -412,6 +420,8 @@ if(!file.exists("networks-ch.rda") | update) {
            width = 9, height = 9, dpi = 72)
     
     assign(paste0("net_ch", gsub("\\D", "", k)), n)
+    assign(paste0("edges_ch", gsub("\\D", "", k)), edges)
+    assign(paste0("bills_ch", gsub("\\D", "", k)), a)
     
     # gexf
     
@@ -488,7 +498,7 @@ if(!file.exists("networks-ch.rda") | update) {
     
   }
   
-  save(list = ls(pattern = "net_ch\\d{2}"), file = "networks-ch.rda")
+  save(list = ls(pattern = "(net_ch|edges_ch|bills_ch)\\d{2}"), file = "networks-ch.rda")
   
 }
 
