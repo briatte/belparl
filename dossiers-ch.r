@@ -63,10 +63,11 @@ if(!file.exists("dossiers-ch.log")) {
         
         hh = htmlParse(paste0("http://www.dekamer.be/kvvcr/", j))
         hh = xpathSApply(hh, "//div[@class='linklist_0']/a/@href")
-        hh = gsub("(.*)&dossierID=(.*)", "\\2", as.character(hh))
+        hh = gsub("(.*)&dossisink()
+                  erID=(.*)", "\\2", as.character(hh))
         
         cat("Page", sprintf("%3.0f", which(h == j)),
-            "scraping", sprintf("%3.0f", length(hh)), "dossiers:", range(hh), "\n")
+            "scraping", sprintf("%3.0f", length(hh)), "dossiers\n")
         
         for(k in hh) {
           

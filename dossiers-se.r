@@ -23,31 +23,55 @@ if(!file.exists("dossiers-se.log")) {
       d = data.frame()
       for(i in h) {
         
-        cat("Parsing", i, "... ")
+        cat("Page", sprintf("%3.0f", which(i == h)), "scraping ")
         
         hh = htmlParse(paste0(root, i))
         hh = xpathSApply(hh, "//a[contains(@href, 'NR=')]/@href")
         
-        cat(length(hh), "records\n")
+        cat(sprintf("%3.0f", length(hh)), "dossiers\n")
         r = data.frame()
         
         for(j in hh) {
           
           t = try(htmlParse(paste0(root, j)))
-          
-          topic = gsub("(  )+( )?", ",", xpathSApply(t, "//table[2]/tr/td", xmlValue))
-          topic = toupper(gsub(",$", "", topic))
           if(!"try-error" %in% class(t)) {
+            
+            amd = which(readHTMLTable(t)[[3]]$Titre == "Amendements")
+            
+            if(length(amd)) {
+              
+              amd = xpathSApply(t, "//table[3]/tr/td[1]/a[1]/@href")[ amd ]
+              amd = paste0(amd[ !grepl("lachambre", amd) ], collapse = ";")
+              
+            } else {
+              
+              amd = NA
+              
+            }
+            
+            type = readHTMLTable(t)[[3]]$Titre[1]
+            if(!length(type)) type = NA
+            
+            status = as.character(readHTMLTable(t)[[5]][2, 2])
+            if(!length(status)) status = NA
+
+            title = scrubber(xpathSApply(t, "//table[1]/tr/td", xmlValue)[4])
+            
+            topic = gsub("(  )+( )?", ",", xpathSApply(t, "//table[2]/tr/td", xmlValue))
+            topic = toupper(gsub(",$", "", topic))
             
             u = xpathSApply(t, "//a[contains(@href, 'showSenator')]/@href")
             
             if(length(u))
               r = rbind(r, data.frame(legislature = 48 + as.numeric(gsub("(.*)LEG=(\\d+)(.*)", "\\2", j)),
                                       dossier = sprintf("%04.0f", as.numeric(gsub("(.*)NR=(\\d+)(.*)", "\\2", j))),
-                                      sid = gsub("(.*)ID=(\\d+)(.*)", "\\2", u),
-                                      name = xpathSApply(t, "//a[contains(@href, 'showSenator')]", xmlValue),
-                                      topic,
-                                      stringsAsFactors = FALSE))
+                                      type, status, title, topic, 
+                                      authors = paste0(paste(
+                                        xpathSApply(t, "//a[contains(@href, 'showSenator')]", xmlValue),
+                                        "[", gsub("(.*)ID=(\\d+)(.*)", "\\2", u), "]"),
+                                      collapse = ";"),
+                                      amendments = amd, stringsAsFactors = FALSE))
+            
           }
           
         }
