@@ -6,3 +6,6 @@ draft-*
 draft
 * copy*
 *.log
+.Rproj.user
+*.Rproj
+*-old

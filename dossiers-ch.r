@@ -34,9 +34,6 @@ if(!file.exists("deputes.csv")) {
 deputes = read.csv("deputes.csv", stringsAsFactors = FALSE)
 deputes$bio = scrubber(gsub("▀ ", "", deputes$bio))
 
-# name fixes
-deputes$nom[ deputes$nom == "Sabien Battheu" ] = "Sabien Lahaye-Battheu"
-
 # scraper
 
 if(!file.exists("dossiers-ch.log")) {
@@ -122,16 +119,20 @@ if(!file.exists("networks-ch.rda") | update) {
     
     if(!file.exists(file)) {
       
-      cat("Building", file, "...\n")
+      cat("Building", file)
       
       d = read.csv(k, stringsAsFactors = FALSE)  
       d$uid = paste0(d$legislature, "K", sprintf("%04.0f", d$dossier))
-      
+
+      uids = unique(d$uid)
       authors = data.frame()
-      for(i in unique(d$uid)) {
+
+      cat(" :", length(uids), "dossiers\n")
+      # sink(gsub("csv$", "log", file))
+      for(i in uids) {
         
         dd = subset(d, uid == i & !grepl("^NL|NL$", d$variable))
-        # cat("Parsing dossier uid", i)
+        # cat("Parsing dossier", i)
         
         topic = unique(dd$value[which(grepl("Eurovoc", dd$variable)) + 2])
         topic = paste0(topic, collapse = ",")
@@ -139,57 +140,97 @@ if(!file.exists("networks-ch.rda") | update) {
         sd = which(dd$variable == "Document principal")
         dd = dd[ min(sd):nrow(dd), ]
         
-        sd = which(dd$variable == "Sous-documents")
-        if(length(sd))
-          dd = dd[ 1:min(sd), ]
+        sd = c(1, which(dd$variable == "Document(s) suivant(s)"))
+        if(length(sd) < 2)
+          sd = c(sd, nrow(dd))
+          
+          for(n in 1:(length(sd) - 1)) {
+            
+            ddd = dd[ sd[ n ]:sd[ n + 1 ], ]
+            type = ddd$value[ which(ddd$variable == "Type")[1] + 1 ]
+            
+            au = which(ddd$value == "AUTEUR")
+            if(length(au)) {
+              au = sapply(au, function(x) paste(ddd$value[ x + 2 ], ddd$value[ x + 1 ], "[", ddd$value[ x + 3 ], "]"))
+              au = unique(au)
+            } else {
+              au = NA
+            }
+            
+            cs = which(ddd$value == "SIGNATAIRE")
+            if(length(cs)) {
+              cs = sapply(cs, function(x) paste(ddd$value[ x + 2 ], ddd$value[ x + 1 ], "[", ddd$value[ x + 3 ], "]"))
+              cs = unique(cs)
+            } else {
+              cs = NA
+            }
+            
+            a = na.omit(c(au, cs))
+            a = a[ !grepl("ZZZ|0", a) ]
+            
+            # subset to cosponsored legislation
+            if(length(a) > 1) {
+
+              # cat("\n -", type, ":", length(au), "author(s)",
+              #     ifelse(!length(na.omit(cs)), "",
+              #            paste(length(na.omit(cs)), "cosponsor(s)")))
+
+              authors = rbind(authors,
+                              cbind(uid = paste0(i, "-", n),
+                                    dossier = i, document = n,
+                                    type, topic,
+                                    authors = paste0(na.omit(au[ !grepl("ZZZ|0", au) ]), collapse = ";"),
+                                    cosponsors = paste0(na.omit(cs[ !grepl("ZZZ|0", cs) ]), collapse = ";")))
+              
+            } else if(length(a) == 1) {
+              
+              # cat("\n -", type, ":", a)
+              
+            } else {
+              
+              # cat("\n -", type, ":", gsub("\\d|\\[|\\]|ZZZ|\\s", "", au))
+              
+            }
+            
+          }
         
-        au = which(dd$value == "AUTEUR")
-        if(length(au)) {
-          au = sapply(au, function(x) paste(dd$value[ x + 2 ], dd$value[ x + 1 ], "[", dd$value[ x + 3 ], "]"))
-          au = data.frame(uid = i, name = au, status = "author", stringsAsFactors = FALSE)
-        } else {
-          warning("No authors at ", i)
-          au = data.frame()
-        }
-        
-        cs = which(dd$value == "SIGNATAIRE")
-        if(length(cs)) {
-          cs = sapply(cs, function(x) paste(dd$value[ x + 2 ], dd$value[ x + 1 ], "[", dd$value[ x + 3 ], "]"))
-          cs = data.frame(uid = i, name = cs, status = "cosponsor", stringsAsFactors = FALSE)
-          au = rbind(au, cs)
-        }
-        
-        if(nrow(au) > 1 & !any(grepl("ZZZ", au$name))) {
-          authors = rbind(authors, cbind(au, topic))
-          # if(nrow(au) > 1)
-          #   cat(":", sum(au$status == "author"), "author(s)", sum(au$status == "cosponsor"), "cosponsor(s)\n")
-          # else
-          #   cat(": single-authored\n")
-        } # else {
-        # cat(": government bill\n")
-        # }
+        # cat("\n\n")
         
       }
+      # sink()
       
       write.csv(authors, file, row.names = FALSE)
       
     }
     
-    a = read.csv(file)
+    a = read.csv(file, stringsAsFactors = FALSE)
     
+    a$type[ grepl("AMENDEMENT|DECISION DE NE PAS AMENDER", a$type) ] = "AMENDEMENTS"
+    a$type[ grepl("AUTRES|AVIS|CORRIGE|CONCLUSIONS|DECISION|ERRATA|PROJET|RAPPORT|ANNEXE|TEXTE", a$type)
+            & a$type != "PROPOSITION DE LOI" ] = "AUTRES"
+    a$type[ grepl("PROPOSITION", a$type) ] = "PROPOSITIONS"
+
+    print(table(a$type, exclude = NULL))
+
+    a = subset(a, type == "PROPOSITIONS")
+
+    # remove buggy dossier(s) [ 52 ]
+    a = subset(a, uid != "52K1939")
+
     # edge list
     
     edges = lapply(unique(a$uid), function(i) {
       
-      d = subset(a, uid == i)
-      d = expand.grid(d$name, d$name)
-      d = subset(d, Var1 != Var2)
-      d$uid = apply(d, 1, function(x) paste0(sort(x), collapse = "_"))
-      d = unique(d$uid)
-      if(length(d)) {
-        d = data.frame(i = gsub("(.*)_(.*)", "\\1", d),
-                       j = gsub("(.*)_(.*)", "\\2", d),
-                       w = length(d))
+      d = na.omit(c(a$authors[ a$uid == i ], a$cosponsors[ a$uid == i ]))
+      d = unlist(strsplit(d, ";"))
+      e = expand.grid(d, d)
+      e = subset(e, Var1 != Var2)
+      e = unique(apply(e, 1, function(x) paste0(sort(x), collapse = "_")))
+      if(length(e)) {
+        d = data.frame(i = gsub("(.*)_(.*)", "\\1", e),
+                       j = gsub("(.*)_(.*)", "\\2", e),
+                       w = length(d) - 1,
+                       stringsAsFactors = FALSE) # number of cosponsors
         return(d)
       } else {
         return(data.frame())
@@ -198,15 +239,41 @@ if(!file.exists("networks-ch.rda") | update) {
     })
     
     edges = rbind.fill(edges)
+    
     edges$uid = apply(edges, 1, function(x) paste0(sort(x[ 1:2 ]), collapse = "_"))
     
-    # using raw counts as weights
-    edges = aggregate(w ~ uid, length, data = edges)
+    # raw edge counts
+    count = table(edges$uid)
     
-    # raw party values on edges
-    print(table(unlist(strsplit(gsub("(.*) \\[ (.*) \\]_(.*) \\[ (.*) \\]",
-                                     "\\2;\\4", edges$uid), ";"))))
+    # Newman-Fowler weights (weighted quantity of bills cosponsored)
+    edges = aggregate(w ~ uid, function(x) sum(1 / x), data = edges)
+
+    # raw counts
+    edges$count = as.vector(count[ edges$uid ])
+
+#     # raw party values on edges
+#     print(table(unlist(strsplit(gsub("(.*) \\[ (.*) \\]_(.*) \\[ (.*) \\]",
+#                                      "\\2;\\4", edges$uid), ";")),
+#                 exclude = NULL))
+
+    # Emile Coulonvaux, PLP [ 47 ]
+    edges$uid = gsub("\\[ PLP \\]", "[ PVV ]", edges$uid)
     
+    # Arthur Honoré Buysse, libéral flamand [ 49-50 ]
+    edges$uid = gsub("\\[ LIB \\]", "[ PVV ]", edges$uid)
+
+    # Karin(e) Jiroflée [ 51 ]
+    edges$uid = gsub("Karine Jiroflée", "Karin Jiroflée", edges$uid)
+
+    # Sabien (Lahaye-)Battheu [ 51-54 ]
+    edges$uid = gsub("Sabien Lahaye-Battheu", "Sabien Battheu", edges$uid)
+
+    # party code fixes [53]
+    edges$uid = gsub("Els Van Hoof \\[ 0 \\]", "Els Van Hoof [ CD&V - N-VA ]", edges$uid)
+    edges$uid = gsub("Stefaan De Clercq \\[ 0 \\]", "Stefaan De Clercq [ CD&V ]", edges$uid)
+    edges$uid = gsub("Myriam Delacroix-Rolin \\[ 0 \\]", "Myriam Delacroix-Rolin [ cdH ]", edges$uid)
+    edges$uid = gsub("Fatma Pehlivan \\[ 0 \\]", "Fatma Pehlivan [ sp.a ]", edges$uid)
+
     edges$uid = gsub("!", "", edges$uid)
     edges$uid = gsub("\\[ (Agalev-)?(ECOLO|Ecolo)(-Groen)? \\]", "[ ECOLO ]", edges$uid)
     # edges$uid = gsub("\\[ (PS|SP|sp.a)(-spirit)?(\\+Vl\\.Pro)? \\]", "[ SOC ]", edges$uid)
@@ -219,10 +286,22 @@ if(!file.exists("networks-ch.rda") | update) {
     edges$uid = gsub("\\[ (PSC|cdH) \\]", "[ C-DEM-F ]", edges$uid)
     edges$uid = gsub("\\[ CD&V - N-VA \\]", "[ C-DEM-V/VOLKS ]", edges$uid)
     edges$uid = gsub("\\[ VB \\]", "[ VLAAMS ]", edges$uid)
+    edges$uid = gsub("\\[ ONAFH \\]", "[ INDEP ]", edges$uid)
+
+    e = unlist(strsplit(gsub("(.*) \\[ (.*) \\]_(.*) \\[ (.*) \\]",
+                             "\\2;\\4", edges$uid), ";"))
+    
+    if(any(!e %in% names(colors))) {
+
+      cat("Unrecognized party codes:\n")
+      print(table(e[ !e %in% names(colors) ]))
+
+    }
     
     edges = data.frame(i = gsub("(.*)_(.*)", "\\1", edges$uid),
                        j = gsub("(.*)_(.*)", "\\2", edges$uid),
-                       w = edges$w)
+                       w = edges[, 2], n = edges[, 3],
+                       stringsAsFactors = FALSE)
     
     # network
     
@@ -238,18 +317,19 @@ if(!file.exists("networks-ch.rda") | update) {
     network::set.edge.attribute(n, "target", edges[, 2])
     
     network::set.edge.attribute(n, "weight", edges[, 3])
+    network::set.edge.attribute(n, "count", edges[, 4])
     network::set.edge.attribute(n, "alpha",
-                                as.numeric(cut(n %e% "weight", c(1:4, Inf),
+                                as.numeric(cut(n %e% "count", c(1:4, Inf),
                                                include.lowest = TRUE)) / 5)
     
     # subset
     
     found = gsub("(.*) \\[ (.*) \\]", "\\1", network.vertex.names(n))
-    known = deputes$nom[ deputes$legislature == as.numeric(gsub("\\D", "", k)) ]
     
+    known = unique(deputes$nom[ deputes$legislature == gsub("\\D", "", k) ])
     if(length(known)) {
       
-      cat("\nDeleting", sum(!found %in% known), "unrecognized nodes\n")
+      cat("\nUnrecognized nodes:", sum(!found %in% known), "out of", network.size(n), "\n")
       
       if(sum(!found %in% known) > 0) {
         

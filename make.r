@@ -52,13 +52,18 @@ order = c("ECOLO", "SOC-F", "SOC-V", "LIB-F", "LIB-V",
           "VOLKS", # "FDF", "FDF/PPW", "FDF/PRL", 
           "ROSSEM", "LDD", "VLAAMS", "FN", "INDEP")
 
-# scrapers
+# settings
 
 update = TRUE
-export = FALSE
+export = TRUE
+
+# scrapers
 
 source("dossiers-ch.r")
 source("dossiers-se.r")
+
+# networks
+
 source("plots.r")
 
 # kthxbye
