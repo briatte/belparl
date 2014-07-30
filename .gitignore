@@ -7,7 +7,5 @@ plots
 draft
 
 .Rproj.user
-*.Rproj
 .Rapp.history
-
-.gitignore
+*.Rproj
