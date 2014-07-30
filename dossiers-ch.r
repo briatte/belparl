@@ -5,9 +5,11 @@ if(!file.exists("deputes.csv")) {
   deputes = data.frame()
   for(i in 48:54) {
     
-    cat("Parsing legislature", i, "... ")
+    cat("Parsing MPs in legislature", i, "... ")
+
     h = htmlParse(paste0("http://www.lachambre.be/kvvcr/showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvlist54.cfm?legis=", i, "&today=n"))
     h = xpathSApply(h, "//a[contains(@href, 'key=')]/@href")
+
     cat(length(h), "pages\n")
     
     for(j in h) {
@@ -218,8 +220,7 @@ if(!file.exists("networks-ch.rda") | update) {
     a = read.csv(file, stringsAsFactors = FALSE)
 
     a$type[ grepl("AMENDEMENT|DECISION DE NE PAS AMENDER", a$type) ] = "AMENDEMENTS"
-    a$type[ grepl("AUTRES|AVIS|CORRIGE|CONCLUSIONS|DECISION|ERRATA|PROJET|RAPPORT|ANNEXE|TEXTE", a$type)
-            & a$type != "PROPOSITION DE LOI" ] = "AUTRES"
+    a$type[ grepl("AVIS|CORRIGE|CONCLUSIONS|DECISION|ERRATA|PROJET|RAPPORT|ANNEXE|TEXTE", a$type) ] = "AUTRES"
     a$type[ grepl("PROPOSITION", a$type) ] = "PROPOSITIONS"
 
     a$status[ grepl("ADOPTE|TERMINE", a$status) ] = "ADOPTE"

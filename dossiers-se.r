@@ -95,46 +95,141 @@ if(!file.exists("dossiers-se.log")) {
 
 }
 
-if(!file.exists("networks-se.rda") | update) {
+dir = dir(pattern = "dossiers-se\\d+.csv")
+for(k in dir) {
   
-  a = lapply(dir(pattern = "-se\\d{2}.csv"), read.csv, stringsAsFactors = FALSE)
-  a = rbind.fill(a)
+  file = gsub("dossiers", "sponsors", k)
   
-  a$uid = paste0(a$legislature, "K", sprintf("%04.0f", a$dossier))
-  a = ddply(a, .(dossier), transform, n = length(name))
-  a = subset(a, n > 1)
-  a$name = paste(scrubber(a$name), a$sid)
-  
-  # scrape only sponsors, not full list of identified senators
-  
-  if(!file.exists("senateurs.csv")) {
+  if(!file.exists(file)) {
     
-    b = sort(unique(a$sid))
-    b = lapply(rev(b), function(x) {
-      
-      cat("Scraping senator", x, "... ")
-      h = htmlParse(paste0("http://www.senate.be/www/?MIval=/showSenator&ID=", x, "&LANG=fr"))
-      h = data.frame(sid = x,
-                     nom = xpathSApply(h, "//title", xmlValue),
-                     parti = scrubber(xpathSApply(h, "//table/tr[1]", xmlValue)),
-                     stringsAsFactors = FALSE)
-      h$parti = gsub(paste0(h$nom, " - "), "", h$parti)
-      h$parti[ grepl("Correspondance", h$parti) ] = "CD&V" # Pieter de Crem bugfix
-      h$parti[ grepl("Bureau", h$parti) ] = "PS" # Patrick Moriau bugfix
-      h$parti[ grepl("Privé", h$parti) ] = "sp.a" # Inga Verhaert bugfix
-      h$parti[ h$nom == "Herman De Croo" ] = "VLD" # since 2009 (?)
-      cat(h$nom, "[", h$parti, "]", "\n")
-      return(h)
-      
-    })
-    b = rbind.fill(b)
+    d = read.csv(k, stringsAsFactors = FALSE)
+    cat("Building", file, ":", nrow(d), "dossiers\n")
     
-    write.csv(b, "senateurs.csv", row.names = FALSE)
+    sp = data.frame()
+    for(j in nrow(d):1) {
+      
+      dd = d[ j, ]
+      r = unlist(strsplit(na.omit(dd$amendments), ";"))
+      
+      dd = data.frame(uid = paste0(dd$legislature, "K", sprintf("%04.0f", dd$dossier)),
+                      dossier = paste0(dd$legislature, "K", sprintf("%04.0f", dd$dossier)),
+                      document = NA,
+                      type = dd$type,
+                      topic = dd$topic,
+                      status = dd$status,
+                      n_au = 1 + str_count(dd$authors, ";"),
+                      authors = paste0(unlist(str_extract_all(dd$authors, "\\d+|;")), collapse = ""),
+                      stringsAsFactors = FALSE)
+      
+      if(length(r)) {
+        
+        amdts = c()
+        for(i in r) {
+          
+          h = htmlParse(paste0(root, i))
+          h = xpathSApply(h, "//frame[@name='pub_doc']/@src")
+          h = htmlParse(paste0(root, h))
+          
+          h = sapply(xpathSApply(h, "//td"), function(x) {
+            y = gsub("(.*)ID=(\\d+)(.*)", "\\2", xpathApply(x, "a/@href"))
+            paste0(y, collapse = ";")
+          })
+          h = h[ h != "" ]
+          amdts = c(amdts, h)
+          
+        }
+        
+        if(length(amdts)) {
+          
+          dd = rbind(dd, data.frame(uid = dd$uid,
+                                    dossier = dd$dossier,
+                                    document = NA,
+                                    type = "AMENDEMENT",
+                                    topic = dd$topic,
+                                    status = NA,
+                                    n_au = 1 + str_count(amdts, ";"),
+                                    authors = amdts,
+                                    stringsAsFactors = FALSE))
+          
+          dd$uid = paste0(dd$uid, "-", 1:nrow(dd))
+          dd$document = 1:nrow(dd)
+          sp = rbind(sp, dd)
+          
+        }
+        
+      } else {
+        
+        dd$uid = paste0(dd$uid, "-1")
+        dd$document = 1
+        sp = rbind(sp, dd)
+        
+      }
+      
+    }
+    
+    sp$type = toupper(sp$type)
+    sp$status = toupper(sp$status)
+    
+    write.csv(sp, file, row.names = FALSE)
     
   }
   
-  b = read.csv("senateurs.csv", stringsAsFactors = FALSE)
+  sp = read.csv(file, stringsAsFactors = FALSE)
+    
+}
+
+a = lapply(dir(pattern = "sponsors-se\\d{2}.csv"), read.csv, stringsAsFactors = FALSE)
+a = rbind.fill(a)
+
+a$type[ grepl("AMENDEMENT", a$type) ] = "AMENDEMENTS"
+a$type[ grepl("AUTRES|NOTE|PROJET|RAPPORT|RÉVISION|COMMISSION SPÉCIALE|TEXTE", a$type) ] = "AUTRES"
+a$type[ grepl("PROPOSITION", a$type) ] = "PROPOSITIONS"  
+
+a$status[ grepl("ADOPTÉ|PUBLIÉ|TERMINÉ|PROMULGUÉ", a$status) ] = "ADOPTE"
+a$status[ grepl("CADUC|REJETÉ|NON PRIS", a$status) ] = "REJETE"
+a$status[ grepl("SANS OBJET|RETIRÉ|COMMUNIQUÉ|A L'EXAMEN", a$status) ] = NA
+
+print(table(a$type, a$status, exclude = NULL))
+
+if(!file.exists("senateurs.csv")) {
   
+  # scrape only sponsors, not full list of identified senators (link below, i = 1:5)
+  # htmlParse(paste0(root, "/www/?MIval=/WieIsWie/LijstDerSenatoren&LEG=", i, "&LANG=fr"))
+  
+  b = sort(unique(unlist(strsplit(a$authors, ";"))))
+  b = lapply(b[ !b %in% c("4078", "43496") ], function(x) {
+    
+    cat("Scraping senator", x, "... ")
+    
+    h = htmlParse(paste0("http://www.senate.be/www/?MIval=/showSenator&ID=", x, "&LANG=fr"))
+    h = data.frame(sid = x,
+                   nom = xpathSApply(h, "//title", xmlValue),
+                   parti = scrubber(xpathSApply(h, "//table/tr[1]", xmlValue)),
+                   stringsAsFactors = FALSE)
+    
+    h$parti = gsub(paste0(h$nom, " - "), "", h$parti)
+    h$parti[ grepl("Correspondance", h$parti) ] = "CD&V" # Pieter de Crem bugfix
+    h$parti[ grepl("Bureau", h$parti) ] = "PS"     # Patrick Moriau bugfix
+    h$parti[ grepl("Privé", h$parti) ] = "sp.a"    # Inga Verhaert bugfix
+    h$parti[ h$nom == "Herman De Croo" ] = "VLD"   # since 2009 (?)
+    h$parti[ h$nom == "Michiel Aerbeydt" ] = "PSC" # Parti Catholique
+    h$parti[ h$parti == "" ] = NA # unspecified
+    
+    cat(h$nom, "[", h$parti, "]", "\n")
+    return(h)
+    
+  })
+  b = rbind.fill(b)
+  
+  write.csv(b, "senateurs.csv", row.names = FALSE)
+  
+}
+
+if(!file.exists("networks-se.rda") | update) {
+  
+  a = subset(a, type == "PROPOSITIONS" & n_au > 1)
+  b = read.csv("senateurs.csv", stringsAsFactors = FALSE)
+
   # match lower chamber
   
   b$parti[ b$parti %in% c("Vlaams Belang", "VL. BLOK") ] = "VLAAMS"
@@ -147,16 +242,23 @@ if(!file.exists("networks-se.rda") | update) {
   b$parti[ b$parti %in% c("CVP", "CD&V") ] = "C-DEM-V"
   b$parti[ b$parti %in% c("VU", "VU-ID", "N-VA") ] = "VOLKS"
   b$parti[ b$parti == "Indépendant" ] = "INDEP"
+
+  b$name = paste(b$nom, "[", b$parti, "]")
+  rownames(b) = b$name
   
-  for(k in unique(a$legislature)) {
+  for(k in unique(substr(a$uid, 1, 2))) {
     
-    cat("\nParsing Senate, legislature", k, "...\n")
-    data = subset(a, legislature == k)
+    cat("\nParsing Senate, legislature", k, "... ")
+
+    data = subset(a, grepl(paste0("^", k), uid))
+    cat(nrow(data), "dossiers\n")
     
     edges = lapply(unique(data$uid), function(i) {
       
       d = subset(data, uid == i)
-      d = expand.grid(d$name, d$name)
+      d = unlist(strsplit(d$authors, ";"))
+      d = b$name[ b$sid %in% d ]
+      d = expand.grid(d, d)
       d = subset(d, Var1 != Var2)
       d$uid = apply(d, 1, function(x) paste0(sort(x), collapse = "_"))
       d = unique(d$uid)
@@ -174,19 +276,62 @@ if(!file.exists("networks-se.rda") | update) {
     edges = rbind.fill(edges)
     edges$uid = apply(edges, 1, function(x) paste0(sort(x[ 1:2 ]), collapse = "_"))
 
-    # using raw counts as weights
-    edges = aggregate(w ~ uid, length, data = edges)
+    # raw edge counts
+    count = table(edges$uid)
     
+    # Newman-Fowler weights (weighted quantity of bills cosponsored)
+    edges = aggregate(w ~ uid, function(x) sum(1 / x), data = edges)
+    
+    # raw counts
+    edges$count = as.vector(count[ edges$uid ])
+    
+    e = unlist(strsplit(gsub("(.*) \\[ (.*) \\]_(.*) \\[ (.*) \\]",
+                             "\\2;\\4", edges$uid), ";"))
+    
+    if(any(!e %in% names(colors))) {
+      
+      cat("Unrecognized party codes:\n")
+      print(table(e[ !e %in% names(colors) ]))
+      
+    }
+
     edges = data.frame(i = gsub("(.*)_(.*)", "\\1", edges$uid),
                        j = gsub("(.*)_(.*)", "\\2", edges$uid),
-                       w = edges$w)
+                       w = edges$w, n = edges[, 3])
     
     # network
-    rownames(b) = paste(b$nom, b$sid)
     
     n = network(edges[, 1:2 ], directed = FALSE)
     n %n% "title" = paste("Sénat, législature", k)
     
+    n %v% "sid" = b[ network.vertex.names(n), "sid" ]
+    n %v% "name" = b[ network.vertex.names(n), "name" ]
+    n %v% "party" = b[ network.vertex.names(n), "parti" ]
+    network.vertex.names(n) = b[ network.vertex.names(n), "nom" ]
+    
+    network::set.edge.attribute(n, "source", as.character(edges[, 1]))
+    network::set.edge.attribute(n, "target", as.character(edges[, 2]))
+    
+    network::set.edge.attribute(n, "weight", edges[, 3])
+    network::set.edge.attribute(n, "weight", edges[, 4])
+    network::set.edge.attribute(n, "alpha",
+                                as.numeric(cut(n %e% "weight", c(1:4, Inf),
+                                               include.lowest = TRUE)) / 5)
+
+    # subset
+    
+    found = network.vertex.names(n)
+    known = unique(b$nom)
+
+    cat("\nUnrecognized nodes:", sum(!found %in% known), "out of", network.size(n), "\n")
+    
+    if(sum(!found %in% known) > 0) {
+      
+      cat(paste0(found[ !found %in% known ], collapse = ", "), "\n")
+      network::delete.vertices(n, which(!found %in% known))
+      
+    }
+
     # modularity
     
     nn = graph.edgelist(as.matrix(edges[, 1:2 ]), directed = FALSE)
@@ -212,17 +357,6 @@ if(!file.exists("networks-se.rda") | update) {
     
     n %n% "modularity_louvain" = modularity(louvain)
     
-    network::set.edge.attribute(n, "source", as.character(edges[, 1]))
-    network::set.edge.attribute(n, "target", as.character(edges[, 2]))
-    
-    network::set.edge.attribute(n, "weight", edges[, 3])
-    network::set.edge.attribute(n, "alpha",
-                                as.numeric(cut(n %e% "weight", c(1:4, Inf),
-                                               include.lowest = TRUE)) / 5)
-
-#     network::set.edge.attribute(n, "source", b[ n %e% "source", "nom" ])
-#     network::set.edge.attribute(n, "target", b[ n %e% "target", "nom" ])
-
     # weighted adjacency matrix to tnet
     tnet = as.tnet(as.sociomatrix(n, attrname = "weight"), type = "weighted one-mode tnet")
     
@@ -242,11 +376,7 @@ if(!file.exists("networks-se.rda") | update) {
     
     n %v% "clustering" = wdeg$clustering    # local
     n %n% "clustering" = clustering_w(tnet) # global
-    
-    n %v% "party" = b[ network.vertex.names(n), "parti" ]
-    n %v% "sid" = network.vertex.names(n)
-    network.vertex.names(n) = b[ network.vertex.names(n), "nom" ]
-    
+        
     party = n %v% "party"
     names(party) = network.vertex.names(n)
     
@@ -274,6 +404,8 @@ if(!file.exists("networks-se.rda") | update) {
            width = 9, height = 9, dpi = 72)
     
     assign(paste0("net_se", k), n)
+    assign(paste0("edges_se", k), edges)
+    assign(paste0("bills_se", k), a)
     
     # gexf
     
@@ -287,17 +419,18 @@ if(!file.exists("networks-se.rda") | update) {
                   keywords = "Parliament, Belgium")
       
       people = data.frame(sid = n %v% "sid",
+                          name = n %v% "name",
                           nom = network.vertex.names(n), 
                           party = n %v% "party", 
                           degree = n %v% "degree",
                           distance = n %v% "distance",
                           stringsAsFactors = FALSE)
       
-      node.att = c("nom", "party", "sid", "degree", "distance")
-      node.att = cbind(label = people$sid, people[, node.att ])
+      node.att = c("nom", "party", "sid", "name", "degree", "distance")
+      node.att = cbind(label = people$name, people[, node.att ])
       
-      people = data.frame(id = as.numeric(factor(people$sid)),
-                          label = people$sid,
+      people = data.frame(id = as.numeric(factor(people$name)),
+                          label = people$name,
                           stringsAsFactors = FALSE)
       
       relations = data.frame(
@@ -349,6 +482,6 @@ if(!file.exists("networks-se.rda") | update) {
   
 }
 
-load("networks-se.rda")
+# load("networks-se.rda")
 
 # job's done

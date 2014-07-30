@@ -5,13 +5,14 @@ rm(list = ls())
 
 library(igraph)
 library(ggplot2)
-library(GGally)  # network plots
+library(GGally)
 library(network)
 library(plyr)
-library(qdap)   # clean strings
-library(rgexf)  # GEXF
+library(qdap)
+library(rgexf)
+library(stringr)
 library(tnet)
-library(XML)    # parse XPath
+library(XML)
 
 # folders
 
