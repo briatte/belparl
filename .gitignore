@@ -1,11 +1,13 @@
 *.csv
 *.rda
 *.html
-plots
-draft-*
-draft
-* copy*
 *.log
+
+plots
+draft
+
 .Rproj.user
 *.Rproj
-*-old
+.Rapp.history
+
+.gitignore
