@@ -49,7 +49,7 @@
   else
     $caption = '<p>This graph shows Belgian Senators during the ' . $page . 'th&nbsp;legislature. A link between two Senators indicates that they have cosponsored at least one bill.';
 
-  $caption = $caption . ' Their size is proportional to their <a href="http://toreopsahl.com/tnet/weighted-networks/node-centrality/">weighted degree</a>. See <a href="plots.html">this page</a> for more plots.</p>'
+  $caption = $caption . ' Their size is proportional to their <a href="http://toreopsahl.com/tnet/weighted-networks/node-centrality/">weighted degree</a>. See <a href="plots.html">this page</a> for more plots and a <a href="plots.html#colors">guide to party colors</a>.</p>'
 ?>
 
 <!doctype html>
@@ -86,7 +86,7 @@
 <div id="sigma-container">
   <div id="controls" class="bg_gr">
     <!-- <?php if($ch == "se") echo $ch; else echo "an"; ?> -->
-    <h1>cosponsorship networks</h1>    
+    <h1>belgian parliament</h1>    
     <h2><a href="<?php if($ch=="ch") echo "http://www.lachambre.be/"; else echo "http://www.senate.be/"; ?>" title="<?php echo $chamber; ?>">
            <img src="logo_<?php echo $ch; ?>.png" height="25" alt="logo">
         </a>&nbsp;<?php echo $chamber . ", " . $array[ $page ]; ?></h2>
