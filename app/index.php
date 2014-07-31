@@ -165,7 +165,7 @@
 
 </div>
 
-<script type="text/javascript" src="/assets/jquery.min.js"></script>
+<script type="text/javascript" src="/assets/jquery-1.11.1.min.js"></script>
 <script type="text/javascript" src="/assets/jquery.smart_autocomplete.min.js"></script>
 <script type="text/javascript" src="/assets/sigmajs-release-v1.0.2/sigma.min.js"></script>
 <script type="text/javascript" src="/assets/sigmajs-release-v1.0.2/plugins/sigma.parsers.gexf.min.js"></script>
