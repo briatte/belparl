@@ -313,9 +313,9 @@ if(!file.exists("networks-se.rda") | update) {
     network::set.edge.attribute(n, "target", as.character(edges[, 2]))
     
     network::set.edge.attribute(n, "weight", edges[, 3])
-    network::set.edge.attribute(n, "weight", edges[, 4])
+    network::set.edge.attribute(n, "count", edges[, 4])
     network::set.edge.attribute(n, "alpha",
-                                as.numeric(cut(n %e% "weight", c(1:4, Inf),
+                                as.numeric(cut(n %e% "count", c(1:4, Inf),
                                                include.lowest = TRUE)) / 5)
 
     # subset
