@@ -1,4 +1,4 @@
-Code hacked from [sigma.js / examples / load-external-gexf.html](https://github.com/jacomyal/sigma.js/blob/master/examples/load-external-gexf.html) (parser) and [osdc2012-demo](http://jcml.fr/~jacomyal/osdc2012-demo/) (searchbox).
+Code hacked from [sigma.js / examples / load-external-gexf.html](https://github.com/jacomyal/sigma.js/blob/master/examples/load-external-gexf.html) (parser) and [osdc2012-demo](http://jcml.fr/~jacomyal/osdc2012-demo/) (searchbox). Use a browser that renders with Canvas to get [transparency effects](https://github.com/jacomyal/sigma.js/issues/261).
 
 # DEPENDENCIES
 
