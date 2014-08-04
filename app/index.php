@@ -17,7 +17,7 @@
     $chamber = "Sénat";
   
   $array = array(
-    "54" => "2014&mdash;",
+    // "54" => "2014&mdash;",
     "53" => "2010&mdash;2014",
     "52" => "2007&mdash;2010",
     "51" => "2003&mdash;2007",
@@ -26,7 +26,7 @@
     "48" => "1991&mdash;1995",
     "47" => "1988&mdash;1991");
   $class = array(
-    "54" => "",
+    // "54" => "",
     "53" => "",
     "52" => "",
     "51" => "",
@@ -49,7 +49,12 @@
   else
     $caption = '<p>This graph shows Belgian Senators during the ' . $page . 'th&nbsp;legislature. A link between two Senators indicates that they have cosponsored at least one bill.';
 
-  $caption = $caption . ' Their size is proportional to their <a href="http://toreopsahl.com/tnet/weighted-networks/node-centrality/">weighted degree</a>. See <a href="plots.html">this page</a> for more plots and a <a href="plots.html#colors">guide to party colors</a>.</p>'
+  $caption = $caption . 
+    '<div id="details"><h3><i class="fa fa-cube"></i> Details</h3>' .
+    '<p>The graph contains /nodes nodes connected by /edges undirected edges' .
+    ' and sized proportionally to their <a href="http://toreopsahl.com/tnet/weighted-networks/node-centrality/">weighted degree</a> in the network.</p>' .
+    // '<p>Each graph is based on a couple of hundred bills, mostly from opposition MPs, plus a handful of bills cosponsored by MPs from the government majority.</p>' .
+    '<p>Group colors&nbsp;&nbsp; /colortext</p></div>';
 ?>
 
 <!doctype html>
@@ -67,7 +72,7 @@
   <meta charset="utf-8">
   <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600" rel="stylesheet" type="text/css" />
   <link href="/assets/styles.css" rel="stylesheet" type="text/css" />
-  <link rel="stylesheet" href="/assets/font-awesome-4.0.3/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/assets/font-awesome-4.1.0/css/font-awesome.min.css">
   <style type="text/css" media="screen">
   html, body {
     font: 24px/150% "Source Sans Pro", sans-serif;
@@ -80,13 +85,19 @@
     height: 100%;
   }
   </style>
+  <script type="text/javascript" src="/assets/jquery-1.11.1.min.js"></script>
+  <script type="text/javascript" src="/assets/jquery.smart_autocomplete.min.js"></script>
+  <script type="text/javascript" src="/assets/sigmajs-release-v1.0.2/sigma.min.js"></script>
+  <script type="text/javascript" src="/assets/sigmajs-release-v1.0.2/plugins/sigma.parsers.gexf.min.js"></script>
+  <script type="text/javascript" src="/assets/sigmajs-release-v1.0.2/plugins/sigma.layout.forceAtlas2.min.js"></script>
 </head>
 <body>
 
 <div id="sigma-container">
   <div id="controls" class="bg_gr">
-    <!-- <?php if($ch == "se") echo $ch; else echo "an"; ?> -->
+
     <h1>belgian parliament</h1>    
+
     <h2><a href="<?php if($ch=="ch") echo "http://www.lachambre.be/"; else echo "http://www.senate.be/"; ?>" title="<?php echo $chamber; ?>">
            <img src="logo_<?php echo $ch; ?>.png" height="25" alt="logo">
         </a>&nbsp;<?php echo $chamber . ", " . $array[ $page ]; ?></h2>
@@ -103,7 +114,7 @@
       if($ch == "se")
         echo "<a href='?chamber=se&amp;legislature=$page' class='here'>Upper</a>";
       else if($page == "48")
-        echo "<a href='?chamber=se&amp;legislature=49'>Upper (starts in 1995)</a>";
+        echo "<a href='?chamber=se&amp;legislature=49'>Upper (1995–)</a>";
       else
         echo "<a href='?chamber=se&amp;legislature=$page'>Upper</a>";
       ?>
@@ -118,11 +129,6 @@
       <a href="?chamber=<?php echo $ch; ?>&amp;legislature=51" class='<?php echo $class["51"]; ?>'>2003&mdash;2007</a>&nbsp;&nbsp;
       <a href="?chamber=<?php echo $ch; ?>&amp;legislature=52" class='<?php echo $class["52"]; ?>'>2007&mdash;2010</a>&nbsp;&nbsp;
       <a href="?chamber=<?php echo $ch; ?>&amp;legislature=53" class='<?php echo $class["53"]; ?>'>2010&mdash;2014</a>&nbsp;&nbsp;
-      <!-- <a href="?chamber=<?php echo $ch; ?>&amp;legislature=54" class='<?php echo $class["54"]; ?>'>2014&mdash;</a> -->
-      <!-- <label title="Map MPs to their constituencies (very approximative).">
-        &nbsp;<input type="checkbox" id="showMap" />
-        Map
-      </label> -->
     </p>
     
     <!-- user search field -->
@@ -132,30 +138,60 @@
       </fieldset>
     </form>
 
-    <p>
-      Click a node to show its ego network. Double click to zoom in or out.<br>
-      Hide&nbsp;
-      <label title="Do not draw network ties (vertex edges).">
-        <input type="checkbox" id="showEdges" />
-        Edges
-      </label>
-      &nbsp;
-      <label title="Do not add labels to nodes (MP names) when zooming in.">
-        <input type="checkbox" id="showLabels" />
-        Labels
-      </label>
-      &nbsp;
-      <label title="Draw only ties formed among frequent cosponsors (edge weight > 0.5).">
-        <input type="checkbox" id="showSparse" />
-        Weak ties
-      </label>
-      <br>
-      Download&nbsp;&nbsp;<i class="fa fa-file-o"></i>&nbsp;&nbsp;<a href="<?php echo 'net_' . $ch . $page; ?>.gexf" title="Download this graph (GEXF, readable with Gephi)">network</a>&nbsp;&nbsp;<i class="fa fa-files-o"></i>&nbsp;&nbsp;<a href="<?php echo $ch; ?>.zip" title="Download all <?php echo $chamber; ?> graphs (GEXF, readable with Gephi)">full series</a></p>
-    <p><a href="#" id="recenter-camera" class="button" title="Reset graph to initial zoom position.">reset zoom</a>&nbsp;&nbsp;<a href="#" id="toggle-layout" class="button" title="Animate with Force Atlas 2.">Animate</a> <small><a href="https://gephi.org/2011/forceatlas2-the-new-version-of-our-home-brew-layout/" title="Details on the Force Atlas 2 algorithm."><i class="fa fa-info-circle"></i></a></small></p>
+    <!-- buttons and sources -->
     <footer>
-      <p>Inspired by <a href="http://coulmont.com/blog/2011/09/02/travail-de-deputes/">Baptiste&nbsp;Coulmont</a> and <a href="http://jhfowler.ucsd.edu/cosponsorship.htm">James&nbsp;Fowler</a>, built with <a href="http://gexf.net/format/" title="GEXF file format (Gephi)">GEXF</a>, <a href="http://www.r-project.org/" title="The R Project for Statistical Computing">R</a> and <a href="http://sigmajs.org/" title"JavaScript library dedicated to graph drawing">sigma.js</a>. 
-      <!-- Background photo by <?php if($ch == "ch") echo "<a href='http://commons.wikimedia.org/wiki/File:Panorama_de_l%27h%C3%A9micyle_de_l%27assembl%C3%A9e_nationale.jpg' title='Original photograph by Richard Ying and Tangui Morlier'>Richard Ying and Tangui Morlier"; else echo "<a href='https://commons.wikimedia.org/wiki/File:L%27h%C3%A9micycle_du_S%C3%A9nat_fran%C3%A7ais_en_septembre_2009.jpg' title='Original photograph by Romain Vincens'>Romain Vincens"; ?></a> (Wikimedia). --></p>
-      <p><a href="http://twitter.com/share?text=Cosponsorship%20networks%20in%20the%20Belgian%20Parliament,%20by%20@phnk:&amp;url=<?php echo 'http://' . $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"]; ?>" class="button" title="Share this page on Twitter."><i class="fa fa-twitter"></i> Tweet</a>&nbsp;&nbsp;<a href="https://github.com/briatte/belparl" class="button" title="Get the code and data from GitHub."><i class="fa fa-github"></i> Code</a></p>
+
+      <ul>
+        <li>Click a node to show its ego network.</li>
+        <li>Double click the graph to zoom in.</li>
+
+        <!-- show/hide -->
+        <li>
+          Hide&nbsp;
+          <label title="Do not draw network ties (vertex edges).">
+            <input type="checkbox" id="showEdges" />
+            Edges
+          </label>
+          &nbsp;
+          <label title="Do not add labels to nodes (MP names) when zooming in.">
+            <input type="checkbox" id="showLabels" />
+            Labels
+          </label>
+          &nbsp;
+          <label title="Draw only ties formed among frequent cosponsors (above mean edge weight).">
+            <input type="checkbox" id="showSparse" />
+            Weak ties
+          </label>
+        </li>
+      </ul>
+
+      <p><a href="#" id="recenter-camera" class="button" title="Reset graph to initial zoom position.">reset zoom</a>&nbsp;&nbsp;<a href="#" id="toggle-layout" class="button" title="Animate with Force Atlas 2.">Animate</a> <small><a href="https://gephi.org/2011/forceatlas2-the-new-version-of-our-home-brew-layout/" title="Details on the Force Atlas 2 algorithm."><i class="fa fa-info-circle"></i></a></small></p>
+
+      <p><a href="http://twitter.com/share?text=Cosponsorship%20networks%20in%20the%20Belgian%20Parliament%20using%20%23rstats%20and%20@sigmajs,%20by%20@phnk:&amp;url=<?php echo 'http://' . $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"]; ?>" class="button" title="Share this page on Twitter."><i class="fa fa-twitter"></i> Tweet</a>&nbsp;&nbsp;<a href="https://github.com/briatte/belparl" class="button" title="Get the code and data from GitHub."><i class="fa fa-github"></i> Code</a></p>
+
+      <ul>
+        <li>Data from <a href="<?php if($ch=="ch") echo "http://www.lachambre.be/"; else echo "http://www.senate.be/"; ?>"><?php if($ch=="ch") echo "lachambre.be"; else echo "senate.be"; ?></a> (summer 2014)</li>
+
+        <li>Download&nbsp;&nbsp;<i class="fa fa-file-o"></i>&nbsp;&nbsp;<a href="<?php echo 'net_' . $ch . $page; ?>.gexf" title="Download this graph (GEXF, readable with Gephi)">network</a>&nbsp;&nbsp;<i class="fa fa-files-o"></i>&nbsp;&nbsp;<a href="<?php echo $ch; ?>.zip" title="Download all <?php echo $chamber; ?> graphs (GEXF, readable with Gephi)">full series</a>&nbsp;&nbsp;<i class="fa fa-file-image-o"></i>&nbsp;&nbsp;<a href="plots.html">plots</a></li>
+      </ul>
+
+      <div id="menu">
+        <p><i class="fa fa-eye"></i>&nbsp;About</p>
+        <ul>
+          <li><h3>About</h3></li>
+          <li class="intro">This visualization was built with <a href="http://www.r-project.org/" title="The R Project for Statistical Computing">R</a> and <a href="http://sigmajs.org/" title"JavaScript library dedicated to graph drawing">sigma.js</a>.</li>
+          <li>It is part of a series inspired by <a href="http://coulmont.com/blog/2011/09/02/travail-de-deputes/">Baptiste Coulmont</a> and <a href="http://jhfowler.ucsd.edu/cosponsorship.htm">James Fowler</a>.</li>
+          <li class="intro">Follow the links below to take a look at other parliaments.</li>
+          <!-- <li><a href="/belparl">Belgium</a></li> -->
+          <li><a href="/folketinget">Denmark</a></li>
+          <li><a href="/epam">European Union</a></li>
+          <li><a href="/neta">France</a></li>
+          <li><a href="/stortinget">Norway</a></li>
+          <li><a href="/riksdag">Sweden</a></li>
+          <li><a href="/marsad">Tunisia</a></li>
+        </ul>
+      </div>
+      
     </footer>
     <div id="graph-container"></div>
   </div>
@@ -164,12 +200,6 @@
   </div>
 
 </div>
-
-<script type="text/javascript" src="/assets/jquery-1.11.1.min.js"></script>
-<script type="text/javascript" src="/assets/jquery.smart_autocomplete.min.js"></script>
-<script type="text/javascript" src="/assets/sigmajs-release-v1.0.2/sigma.min.js"></script>
-<script type="text/javascript" src="/assets/sigmajs-release-v1.0.2/plugins/sigma.parsers.gexf.min.js"></script>
-<script type="text/javascript" src="/assets/sigmajs-release-v1.0.2/plugins/sigma.layout.forceAtlas2.min.js"></script>
 
 <script>
 function decimalAdjust(type, value, exp) {
@@ -222,18 +252,52 @@ sigma.parsers.gexf(
     container: 'sigma-container'
   },
   function(s) {
-      
-    // We first need to save the original colors of our
-    // nodes and edges, like this:
-    s.graph.nodes().forEach(function(n) {
-      n.originalColor = n.color;
-      n.originalX = n.x;
-      n.originalY = n.y;
-    });
+
+    // initial edges
     s.graph.edges().forEach(function(e) {
       e.originalColor = e.color;
       e.type = 'arrow';
     });
+    
+    // caption
+    var parties = ["Greens", "Francophone Socialists", "Flemish Socialists", "Francophone Liberals", "Flemish Liberals", "Francophone Conservatives", "Flemish Conservatives", "Flemish Conservatives &amp; Volksunie", "Volksunie", "Front National", "Vlaams Blok", "ROSSEM", "<i lang='nl'>Libertair, Direct, Democratisch</i>", "Independent"];
+    var colors = new Array(parties.length);
+
+    // initial nodes
+    s.graph.nodes().forEach(function(n) {
+      // explicit party groups
+      if(n.attributes["party"] == "ECOLO") n.attributes["party"] = "Greens";
+      if(n.attributes["party"] == "C-DEM-F") n.attributes["party"] = "Francophone Conservatives";
+      if(n.attributes["party"] == "C-DEM-V") n.attributes["party"] = "Flemish Conservatives";
+      if(n.attributes["party"] == "C-DEM-V/VOLKS") n.attributes["party"] = "Flemish Conservatives &amp; Volksunie";
+      if(n.attributes["party"] == "LIB-F") n.attributes["party"] = "Francophone Liberals";
+      if(n.attributes["party"] == "LIB-V") n.attributes["party"] = "Flemish Liberals";
+      if(n.attributes["party"] == "SOC-F") n.attributes["party"] = "Francophone Socialists";
+      if(n.attributes["party"] == "SOC-V") n.attributes["party"] = "Flemish Socialists";
+      if(n.attributes["party"] == "FN") n.attributes["party"] = "Front National";
+      if(n.attributes["party"] == "VLAAMS") n.attributes["party"] = "Vlaams Blok";
+      if(n.attributes["party"] == "VOLKS") n.attributes["party"] = "Volksunie";
+      // if(n.attributes["party"] == "ROSSEM") n.attributes["party"] = "ROSSEM";
+      if(n.attributes["party"] == "LDD") n.attributes["party"] = "<i lang='nl'>Libertair, Direct, Democratisch</i>";
+      if(n.attributes["party"] == "INDEP") n.attributes["party"] = "Independent";
+      if(parties.indexOf(n.attributes["party"]) != -1)
+        colors[ jQuery.inArray(n.attributes["party"], parties) ] = n.color;      
+      n.originalColor = n.color;
+      n.originalX = n.x;
+      n.originalY = n.y;
+    });
+    
+    // caption text
+    var t = "";
+    for (i = 0; i < parties.length; i++) {
+      if(typeof colors[i] != "undefined")
+        t = t + "&nbsp;<span style='color:" +
+          colors[i].replace('0.3)', '1)').replace('0.5)', '1)') + 
+          "'>" + parties[i].replace(new RegExp(' ', 'g'), '&nbsp;') + "</span> ";
+    };
+        
+    // pass network dimensions and caption
+    document.getElementById('caption').innerHTML = document.getElementById('caption').innerHTML.replace('/nodes', s.graph.nodes().length).replace('/edges', s.graph.edges().length).replace('/colortext', t);
 
     // When a node is clicked, we check for each node
     // if it is a neighbor of the clicked one. If not,
@@ -260,52 +324,34 @@ sigma.parsers.gexf(
           e.color = '#333';
       });
             
-      // append mandate suffix
-      //
-      // var mandats = e.data.node.attributes['nb_mandats'];
-      // if (mandats == "1")
-      //   mandats = "first";
-      // else if (mandats == "2")
-      //   mandats = "second"
-      // else if (mandats == "3")
-      //   mandats = "third"
-      // else
-      //   mandats = mandats + 'th';
-
       // node color
       var rgba = e.data.node.color;
 
-      // explicit party groups
-      group = e.data.node.attributes['party'];
-      party = "?";
-      if(group == "ECOLO") party = "Greens";
-      if(group == "C-DEM-F") party = "Francophone Conservatives";
-      if(group == "C-DEM-V") party = "Flemish Conservatives";
-      if(group == "C-DEM-V/VOLKS") party = "Flemish Conservatives/Volksunie";
-      if(group == "LIB-F") party = "Francophone Liberals";
-      if(group == "LIB-V") party = "Flemish Liberals";
-      if(group == "SOC-F") party = "Francophone Socialists";
-      if(group == "SOC-V") party = "Flemish Socialists";
-      if(group == "FN") party = "Front National";
-      if(group == "VLAAMS") party = "Vlaams Blok";
-      if(group == "VOLKS") party = "Volksunie";
-      if(group == "VOLKS") party = "Volksunie";
-      if(group == "ROSSEM") party = "ROSSEM";
-      if(group == "LDD") party = "<i lang='nl'>Libertair, Direct, Democratisch</i>";
-      if(group == "INDEP") party = "independent";
-
       if(document.title.match('Chambre'))
-        profile = "<a href='http://www.lachambre.be/kvvcr/showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=" + e.data.node.attributes['link'] + "' title='Go to profile (<?php echo $chamber; ?>, new window)' target='_blank'>";
+        var profile = "<a href='http://www.lachambre.be/kvvcr/showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=" + e.data.node.attributes['link'] + "' title='Go to profile (<?php echo $chamber; ?>, new window)' target='_blank'>";
       else
-        profile = "<a href='http://www.senate.be/www/?MIval=/showSenator&ID=" + e.data.node.attributes['sid'] + "' title='Go to profile (<?php echo $chamber; ?>, new window)' target='_blank'>";
+        var profile = "<a href='http://www.senate.be/www/?MIval=/showSenator&ID=" + e.data.node.attributes['sid'] + "' title='Go to profile (<?php echo $chamber; ?>, new window)' target='_blank'>";
 
-      distance = "around " + Math.round10(e.data.node.attributes['distance'], -1);
+      // distance
+      var distance = "around " + Math.round10(e.data.node.attributes['distance'], -1);
       if(isNaN(e.data.node.attributes['distance']))
-        distance = "impossible to compute (too isolated)";
+        var distance = "impossible to compute (too isolated)";
+
+      // transparency
+      var rgba = e.data.node.color.replace('0.3)', '0.25)').replace('0.5)', '0.25)');
+
       if(document.title.match('Chambre'))
-        document.getElementById('caption').innerHTML = '<p style="background:' + rgba + ';">' + profile + '<img class="small" src="' + e.data.node.attributes['photo'].replace("/site/", "http://www.lachambre.be/site/") + '" alt="no photo available" /></a> You selected ' + profile + e.data.node.attributes['name'] + '</a> <span title="Political party affiliation(s): ' + group.replace('/', ", ") + '" style="color:' + rgba.replace('0.3)', '1)') + ';">(' + party + ')</span>, who <?php echo $have; ?> <span title="unweighted Freeman degree">' + s.graph.getNeighborsCount(nodeId) + ' bill cosponsor(s)</span> during the legislature. The <a href="http://toreopsahl.com/tnet/weighted-networks/shortest-paths/">mean weighted distance</a> between this MP and all others <?php echo $be; ?>&nbsp;' + distance + '.</p>';
+        document.getElementById('caption').innerHTML = '<p style="background:' + rgba + ';">' + 
+        profile + '<img height="120px" src="' + e.data.node.attributes['photo'].replace("/site/", "http://www.lachambre.be/site/") + '" alt="no photo available" /></a> You selected ' + 
+        profile + e.data.node.attributes['name'] + '</a> <span title="Political party affiliation(s): ' + e.data.node.attributes['party'] + '" style="color:' + rgba.replace('0.25)', '1)') + ';">(' + 
+        e.data.node.attributes['party'] + ')</span>, who <?php echo $have; ?> <span title="unweighted Freeman degree">' + 
+        s.graph.getNeighborsCount(nodeId) + ' bill cosponsor(s)</span> during the legislature. The <a href="http://toreopsahl.com/tnet/weighted-networks/shortest-paths/">mean weighted distance</a> between this MP and all others <?php echo $be; ?>&nbsp;' + distance + '.</p>';
       else
-        document.getElementById('caption').innerHTML = '<p style="background:' + rgba + ';">' + profile + '<img class="small" src="http://www.senate.be/www/?MItabObj=persoon&MIcolObj=foto&MInamObj=persoonid&MIvalObj=' + e.data.node.attributes['sid'] + '&MItypeObj=image/gif" alt="no photo available" /></a> You selected ' + profile + e.data.node.attributes['name'] + '</a> <span title="Political party affiliation(s): ' + group.replace('/', ", ") + '" style="color:' + rgba.replace('0.3)', '1)') + ';">(' + party + ')</span>, who <?php echo $have; ?> <span title="unweighted Freeman degree">' + s.graph.getNeighborsCount(nodeId) + ' bill cosponsor(s)</span> during the legislature. The <a href="http://toreopsahl.com/tnet/weighted-networks/shortest-paths/">mean weighted distance</a> between this MP and all others <?php echo $be; ?>&nbsp;' + distance + '.</p>';
+        document.getElementById('caption').innerHTML = '<p style="background:' + rgba + ';">' + 
+        profile + '<img height="120px" src="http://www.senate.be/www/?MItabObj=persoon&MIcolObj=foto&MInamObj=persoonid&MIvalObj=' + e.data.node.attributes['sid'] + '&MItypeObj=image/gif" alt="no photo available" /></a> You selected ' + 
+        profile + e.data.node.attributes['name'] + '</a> <span title="Political party affiliation(s): ' + e.data.node.attributes['party'] + '" style="color:' + rgba.replace('0.25)', '1)') + ';">(' + 
+        e.data.node.attributes['party'] + ')</span>, who <?php echo $have; ?> <span title="unweighted Freeman degree">' + 
+        s.graph.getNeighborsCount(nodeId) + ' bill cosponsor(s)</span> during the legislature. The <a href="http://toreopsahl.com/tnet/weighted-networks/shortest-paths/">mean weighted distance</a> between this MP and all others <?php echo $be; ?>&nbsp;' + distance + '.</p>';
       
       // Since the data has been modified, we need to
       // call the refresh method to make the colors
