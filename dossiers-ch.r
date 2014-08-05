@@ -17,6 +17,8 @@ if(!file.exists("deputes.csv")) {
       hh = htmlParse(paste0("http://www.lachambre.be/kvvcr/", j))
       hh = data.frame(legislature = i,
                       nom = scrubber(xpathSApply(hh, "//div[@id='story']/*/h2", xmlValue)),
+                      mandate = paste0(xpathSApply(hh, "//div[@id='story']/*/a[contains(@href, 'lactivity=')]",
+                                                   xmlValue), collapse = ";"),
                       photo = xpathSApply(hh, "//img[contains(@src, 'cv/')]/@src"),
                       url = j,
                       bio = xpathSApply(hh, "//div[@id='story']/table[2]/tr[@valign='top'][2]/td/p", xmlValue))
@@ -35,6 +37,23 @@ if(!file.exists("deputes.csv")) {
 
 deputes = read.csv("deputes.csv", stringsAsFactors = FALSE)
 deputes$bio = scrubber(gsub("▀ ", "", deputes$bio))
+
+deputes$sexe = str_extract(deputes$bio, "Député(e)?")
+deputes$sexe[ deputes$nom == "Juliette Boulet" ] = "Députée" # Flemish text
+deputes$sexe[ deputes$nom == "Paul Meeus" ] = "Député" # typo
+
+deputes$from = as.numeric(sapply(str_extract_all(deputes$mandate, "[0-9]{4}"), min))
+deputes$to = as.numeric(sapply(str_extract_all(deputes$mandate, "[0-9]{4}"), max))
+deputes$nyears = deputes$to - deputes$from + 1
+
+deputes$annee_naissance = str_extract(deputes$bio,
+                                      "(N|n)é(e)? (a|à|te) (\\w|,|\\.|'|-|\\(|\\)|\\s)+ le \\d+(er)? \\w+ \\d{4}")
+deputes$annee_naissance = as.numeric(str_extract(deputes$annee_naissance, "[0-9]{4}"))
+deputes$annee_naissance[ deputes$nom == "Juliette Boulet" ] = 1981 # Flemish text
+deputes$annee_naissance[ deputes$nom == "Magda Raemaekers" ] = 1947 # Wikipedia additions
+deputes$annee_naissance[ deputes$nom == "Frédéric Daerden" ] = 1970
+deputes$annee_naissance[ deputes$nom == "Georges Dallemagne" ] = 1958
+deputes$annee_naissance[ deputes$nom == "Frank Wilrycx" ] = 1965
 
 # scraper
 

@@ -202,11 +202,22 @@ if(!file.exists("senateurs.csv")) {
     cat("Scraping senator", x, "... ")
     
     h = htmlParse(paste0("http://www.senate.be/www/?MIval=/showSenator&ID=", x, "&LANG=fr"))
+    sex = na.omit(str_extract(xpathSApply(h, "//table/tr", xmlValue), "Sénateur|Sénatrice"))
+    man = xpathSApply(h, "//table/tr", xmlValue)
+    man = unique(unlist(str_extract_all(man[ grepl("Législature", man) ], "[0-9]{4}-[0-9]{4}")))
+    if(is.null(man)) man = "-"
+    
     h = data.frame(sid = x,
                    nom = xpathSApply(h, "//title", xmlValue),
+                   sex = ifelse(length(sex), sex, NA),
+                   from = min(as.numeric(unlist(strsplit(man, "-")))),
+                   to = max(as.numeric(unlist(strsplit(man, "-")))),
                    parti = scrubber(xpathSApply(h, "//table/tr[1]", xmlValue)),
                    stringsAsFactors = FALSE)
     
+    h$from[ is.infinite(h$from) ] = NA
+    h$to[ is.infinite(h$to) ] = NA
+    h$nyears = h$to - h$from + 1
     h$parti = gsub(paste0(h$nom, " - "), "", h$parti)
     h$parti[ grepl("Correspondance", h$parti) ] = "CD&V" # Pieter de Crem bugfix
     h$parti[ grepl("Bureau", h$parti) ] = "PS"     # Patrick Moriau bugfix
