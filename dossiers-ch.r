@@ -450,8 +450,6 @@ if(!file.exists("networks-ch.rda") | update) {
     
     n %v% "clustering" = wdeg$clustering    # local
     n %n% "clustering" = clustering_w(tnet) # global
-
-    party = n %v% "party"
     
     i = colors[ gsub("(.*) \\[ (.*) \\]", "\\2", n %e% "source") ]
     j = colors[ gsub("(.*) \\[ (.*) \\]", "\\2", n %e% "target") ]
