@@ -353,7 +353,7 @@ if(!file.exists("networks-se.rda") | update) {
     
     nn = nn - which(is.na(i))
     i = as.numeric(factor(i[ !is.na(i) ]))
-        
+    
     n %n% "modularity" = modularity(nn, membership = i, weights = E(nn)$weight)
     
     walktrap = lapply(1:50, function(x) walktrap.community(nn, steps = x))
@@ -389,7 +389,6 @@ if(!file.exists("networks-se.rda") | update) {
     n %n% "clustering" = clustering_w(tnet) # global
         
     party = n %v% "party"
-    names(party) = network.vertex.names(n)
     
     i = colors[ b[ n %e% "source", "parti" ] ]
     j = colors[ b[ n %e% "target", "parti" ] ]
@@ -425,43 +424,34 @@ if(!file.exists("networks-se.rda") | update) {
             
       rgb = t(col2rgb(colors[ names(colors) %in% as.character(n %v% "party") ]))
       mode = "fruchtermanreingold"
-      meta = list(creator = "rgexf",
-                  description = paste0(mode, " placement"),
+      meta = list(creator = "rgexf", description = paste0(mode, " placement"),
                   keywords = "Parliament, Belgium")
       
-      people = data.frame(sid = n %v% "sid",
-                          name = n %v% "name",
-                          nom = network.vertex.names(n), 
-                          party = n %v% "party", 
-                          degree = n %v% "degree",
-                          distance = n %v% "distance",
-                          stringsAsFactors = FALSE)
+      node.att = data.frame(sid = n %v% "sid",
+                            name = network.vertex.names(n),
+                            party = n %v% "party",
+                            distance = round(n %v% "distance", 1),
+                            url = n %v% "url",
+                            photo = n %v% "photo",
+                            stringsAsFactors = FALSE)
       
-      node.att = c("nom", "party", "sid", "name", "degree", "distance")
-      node.att = cbind(label = people$name, people[, node.att ])
-      
-      people = data.frame(id = as.numeric(factor(people$name)),
-                          label = people$name,
-                          stringsAsFactors = FALSE)
+      people = paste(network.vertex.names(n), "[", n %v% "party", "]")
+      people = data.frame(id = as.numeric(factor(people)), label = people, stringsAsFactors = FALSE)
       
       relations = data.frame(
         source = as.numeric(factor(n %e% "source", levels = levels(factor(people$label)))),
         target = as.numeric(factor(n %e% "target", levels = levels(factor(people$label)))),
-        weight = n %e% "weight"
+        weight = n %e% "weight", count = n %e% "count"
       )
       relations = na.omit(relations)
       
       nodecolors = lapply(node.att$party, function(x)
-        data.frame(r = rgb[x, 1], g = rgb[x, 2], b = rgb[x, 3], a = .3 ))
+        data.frame(r = rgb[x, 1], g = rgb[x, 2], b = rgb[x, 3], a = .5))
       nodecolors = as.matrix(rbind.fill(nodecolors))
       
+      # node placement
       net = as.matrix.network.adjacency(n)
-      
-      # placement method (Kamada-Kawai best at separating at reasonable distances)
-      position = paste0("gplot.layout.", mode)
-      if(!exists(position)) stop("Unsupported placement method '", position, "'")
-      
-      position = do.call(position, list(net, NULL))
+      position = do.call(paste0("gplot.layout.", mode), list(net, NULL))
       position = as.matrix(cbind(position, 1))
       colnames(position) = c("x", "y", "z")
       
@@ -470,18 +460,12 @@ if(!file.exists("networks-se.rda") | update) {
       position[, "y"] = round(position[, "y"], 2)
       
       write.gexf(nodes = people,
-                 edges = relations[, -3],
-                 edgesWeight = relations[, 3],
-                 nodesAtt = data.frame(label = as.character(node.att$label),
-                                       name = node.att$nom,
-                                       party = node.att$party,
-                                       sid = gsub("\\D", "", node.att$sid),
-                                       distance = node.att$distance,
-                                       stringsAsFactors = FALSE),
-                 nodesVizAtt = list(position = position,
-                                    color = nodecolors,
-                                    size = round(node.att$degree)),
-                 # edgesVizAtt = list(size = relations[, 3]),
+                 edges = relations[, -3:-4 ],
+                 edgesWeight = round(relations[, 3], 3),
+                 nodesAtt = node.att,
+                 nodesVizAtt = list(position = position, color = nodecolors,
+                                    size = round(n %v% "degree", 1)),
+                 # edgesVizAtt = list(size = relations[, 4]),
                  defaultedgetype = "undirected", meta = meta,
                  output = gexf)
       

@@ -53,7 +53,6 @@
     '<div id="details"><h3><i class="fa fa-cube"></i> Details</h3>' .
     '<p>The graph contains /nodes nodes connected by /edges undirected edges' .
     ' and sized proportionally to their <a href="http://toreopsahl.com/tnet/weighted-networks/node-centrality/">weighted degree</a> in the network.</p>' .
-    // '<p>Each graph is based on a couple of hundred bills, mostly from opposition MPs, plus a handful of bills cosponsored by MPs from the government majority.</p>' .
     '<p>Group colors&nbsp;&nbsp; /colortext</p></div>';
 ?>
 
@@ -124,11 +123,11 @@
       if($ch == "ch")
         echo'<a href="?chamber=' . $ch . '&amp;legislature=48" class=' . $class["48"] . '>1991&mdash;1995</a>&nbsp;&nbsp;';
       ?>
-      <a href="?chamber=<?php echo $ch; ?>&amp;legislature=49" class='<?php echo $class["49"]; ?>'>1995&mdash;1999</a>&nbsp;&nbsp;
-      <a href="?chamber=<?php echo $ch; ?>&amp;legislature=50" class='<?php echo $class["50"]; ?>'>1999&mdash;2003</a>&nbsp;&nbsp;
-      <a href="?chamber=<?php echo $ch; ?>&amp;legislature=51" class='<?php echo $class["51"]; ?>'>2003&mdash;2007</a>&nbsp;&nbsp;
-      <a href="?chamber=<?php echo $ch; ?>&amp;legislature=52" class='<?php echo $class["52"]; ?>'>2007&mdash;2010</a>&nbsp;&nbsp;
-      <a href="?chamber=<?php echo $ch; ?>&amp;legislature=53" class='<?php echo $class["53"]; ?>'>2010&mdash;2014</a>&nbsp;&nbsp;
+      <a href="?chamber=<?php echo $ch; ?>&amp;legislature=49" class='<?php echo $class["49"]; ?>'><?php echo $array["49"]; ?></a>&nbsp;&nbsp;
+      <a href="?chamber=<?php echo $ch; ?>&amp;legislature=50" class='<?php echo $class["50"]; ?>'><?php echo $array["50"]; ?></a>&nbsp;&nbsp;
+      <a href="?chamber=<?php echo $ch; ?>&amp;legislature=51" class='<?php echo $class["51"]; ?>'><?php echo $array["51"]; ?></a>&nbsp;&nbsp;
+      <a href="?chamber=<?php echo $ch; ?>&amp;legislature=52" class='<?php echo $class["52"]; ?>'><?php echo $array["52"]; ?></a>&nbsp;&nbsp;
+      <a href="?chamber=<?php echo $ch; ?>&amp;legislature=53" class='<?php echo $class["53"]; ?>'><?php echo $array["53"]; ?></a>&nbsp;&nbsp;
     </p>
     
     <!-- user search field -->
@@ -202,32 +201,6 @@
 </div>
 
 <script>
-function decimalAdjust(type, value, exp) {
-	// If the exp is undefined or zero...
-	if (typeof exp === 'undefined' || +exp === 0) {
-		return Math[type](value);
-	}
-	value = +value;
-	exp = +exp;
-	// If the value is not a number or the exp is not an integer...
-	if (isNaN(value) || !(typeof exp === 'number' && exp % 1 === 0)) {
-		return NaN;
-	}
-	// Shift
-	value = value.toString().split('e');
-	value = Math[type](+(value[0] + 'e' + (value[1] ? (+value[1] - exp) : -exp)));
-	// Shift back
-	value = value.toString().split('e');
-	return +(value[0] + 'e' + (value[1] ? (+value[1] + exp) : exp));
-}
-
-// Decimal round
-if (!Math.round10) {
-	Math.round10 = function(value, exp) {
-		return decimalAdjust('round', value, exp);
-	};
-}
-
 // Add a method to the graph model that returns an
 // object with every neighbors of a node inside:
 sigma.classes.graph.addMethod('neighbors', function(nodeId) {
@@ -328,12 +301,12 @@ sigma.parsers.gexf(
       var rgba = e.data.node.color;
 
       if(document.title.match('Chambre'))
-        var profile = "<a href='http://www.lachambre.be/kvvcr/showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=" + e.data.node.attributes['link'] + "' title='Go to profile (<?php echo $chamber; ?>, new window)' target='_blank'>";
+        var profile = "<a href='http://www.lachambre.be/kvvcr/showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=" + e.data.node.attributes['url'] + "&lactivity=<?php echo $page ?>' title='Go to profile (<?php echo $chamber; ?>, new window)' target='_blank'>";
       else
         var profile = "<a href='http://www.senate.be/www/?MIval=/showSenator&ID=" + e.data.node.attributes['sid'] + "' title='Go to profile (<?php echo $chamber; ?>, new window)' target='_blank'>";
 
       // distance
-      var distance = "around " + Math.round10(e.data.node.attributes['distance'], -1);
+      var distance = "around " + e.data.node.attributes['distance'];
       if(isNaN(e.data.node.attributes['distance']))
         var distance = "impossible to compute (too isolated)";
 
@@ -374,6 +347,10 @@ sigma.parsers.gexf(
       s.refresh();
       
       document.getElementById('caption').innerHTML = '<?php echo $caption; ?>';
+      
+      // pass network dimensions and caption (again)
+      document.getElementById('caption').innerHTML = document.getElementById('caption').innerHTML.replace('/nodes', s.graph.nodes().length).replace('/edges', s.graph.edges().length).replace('/colortext', t);
+      
     });
     
     s.settings({
@@ -384,8 +361,8 @@ sigma.parsers.gexf(
       defaultLabelColor: '#fff',
       defaultLabelSize: 18,
       font: "source sans pro",
-      minEdgeSize: .1,
-      maxEdgeSize: .3,
+      minEdgeSize: .3,
+      maxEdgeSize: .9,
       labelHoverBGColor: 'node',
       defaultLabelHoverColor: '#fff',
       labelHoverShadow: 'node'
@@ -495,15 +472,15 @@ sigma.parsers.gexf(
         });
         s.settings({
           minEdgeSize: 0,
-          maxEdgeSize: .9
+          maxEdgeSize: 2.7
         });
       } else {
         s.graph.edges().forEach(function(e) {
           e.color = e.originalColor;
         });
         s.settings({
-          minEdgeSize: .1,
-          maxEdgeSize: .3,
+          minEdgeSize: .3,
+          maxEdgeSize: .9,
         });
       }
       s.refresh();
