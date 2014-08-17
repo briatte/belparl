@@ -1,6 +1,6 @@
 # scrape full MP listing
 
-if(!file.exists("deputes.csv")) {
+if(!file.exists("data/deputes.csv")) {
   
   deputes = data.frame()
   for(i in 48:54) {
@@ -31,11 +31,25 @@ if(!file.exists("deputes.csv")) {
     
   }
   
-  write.csv(deputes, "deputes.csv", row.names = FALSE)
+  write.csv(deputes, "data/deputes.csv", row.names = FALSE)
   
 }
 
-deputes = read.csv("deputes.csv", stringsAsFactors = FALSE)
+deputes = read.csv("data/deputes.csv", stringsAsFactors = FALSE)
+
+# download photos
+for(i in unique(deputes$photo)) {
+  photo = gsub("/site/wwwroot/images/cv", "photos_ch", i)
+  if(!file.exists(photo) | !file.info(photo)$size)
+    try(download.file(paste0("http://www.lachambre.be", i), photo, mode = "wb", quiet = TRUE), silent = TRUE)
+  if(!file.exists(photo) | !file.info(photo)$size) {
+    file.remove(photo)
+    deputes$photo[ deputes$photo == i ] = NA
+  } else {
+    deputes$photo[ deputes$photo == i ] = gsub("photos_ch/|.gif$", "", photo)
+  }
+}
+
 deputes$bio = scrubber(gsub("▀ ", "", deputes$bio))
 
 deputes$sexe = str_extract(deputes$bio, "Député(e)?")
@@ -60,18 +74,18 @@ deputes$url = gsub("(.*)key=(\\d+)&lactivity=(\\d+)", "\\2", deputes$url)
 
 # scraper
 
-if(!file.exists("dossiers-ch.log")) {
+if(!file.exists("data/dossiers-ch.log")) {
   
   root = "http://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=fr&cfm=Listdocument.cfm?legislat="
   cat("Scraping raw lower chamber data (be patient, takes a few hours)...\n")
   
-  sink("dossiers-ch.log")
+  sink("data/dossiers-ch.log")
   cat("Launched:", as.character(Sys.time()), "\n\n")
   
   # do not add 54 just yet (not enough data) -- 2014-07-25
   for(i in 47:53) {
     
-    file = paste0("dossiers-ch", i, ".csv")
+    file = paste0("data/dossiers-ch", i, ".csv")
     if(!file.exists(file)) {
       
       cat("Scraping legislature", i, "... ")
@@ -134,9 +148,9 @@ if(!file.exists("dossiers-ch.log")) {
 
 # parser
 
-if(!file.exists("networks-ch.rda") | update) {
+if(!file.exists("data/net_ch.rda") | update) {
   
-  dir = dir(pattern = "dossiers-ch\\d{2}.csv")
+  dir = dir("data", pattern = "dossiers-ch\\d{2}.csv", full.names = TRUE)
   for(k in dir) {
     
     file = gsub("dossiers", "sponsors", k)
@@ -251,43 +265,35 @@ if(!file.exists("networks-ch.rda") | update) {
     
     print(table(a$type, a$status, exclude = NULL))
 
-    a = subset(a, type == "PROPOSITIONS" & n_au > 1)
-    a = subset(a, uid != "52K1939") # remove buggy dossier [ 52 ]
+    b = subset(a, type == "PROPOSITIONS" & n_au > 1)
+    b = subset(b, uid != "52K1939") # remove buggy dossier [ 52 ]
 
-    cat("Subsetting to", nrow(a), "cosponsored bills\n")
-
+    cat("Subsetting to", nrow(b), "cosponsored bills\n")
+    
     # edge list
-    edges = lapply(unique(a$uid), function(i) {
+    edges = rbind.fill(lapply(unique(b$uid), function(i) {
       
-      d = na.omit(c(a$authors[ a$uid == i ], a$cosponsors[ a$uid == i ]))
+      d = na.omit(c(b$authors[ b$uid == i ], b$cosponsors[ b$uid == i ]))
       d = unlist(strsplit(d, ";"))
-      e = expand.grid(d, d)
-      e = subset(e, Var1 != Var2)
-      e = unique(apply(e, 1, function(x) paste0(sort(x), collapse = "_")))
-      if(length(e)) {
-        d = data.frame(i = gsub("(.*)_(.*)", "\\1", e),
-                       j = gsub("(.*)_(.*)", "\\2", e),
-                       w = length(d) - 1,
-                       stringsAsFactors = FALSE) # number of cosponsors
-        return(d)
-      } else {
-        return(data.frame())
-      }
       
-    })
-    
-    edges = rbind.fill(edges)
-    
-    edges$uid = apply(edges, 1, function(x) paste0(sort(x[ 1:2 ]), collapse = "_"))
+      e = subset(expand.grid(d, d), Var1 != Var2)
+      e = unique(apply(e, 1, function(x) paste0(sort(x), collapse = "_")))
+      
+      if(length(e))
+        return(data.frame(e, w = length(d) - 1))
+      else
+        return(data.frame())
+      
+    }))
     
     # raw edge counts
-    count = table(edges$uid)
+    count = table(edges$e)
     
     # Newman-Fowler weights (weighted quantity of bills cosponsored)
-    edges = aggregate(w ~ uid, function(x) sum(1 / x), data = edges)
+    edges = aggregate(w ~ e, function(x) sum(1 / x), data = edges)
 
-    # raw counts
-    edges$count = as.vector(count[ edges$uid ])
+    # raw counts of ties
+    edges$count = as.vector(count[ edges$e ])
     
     #     # raw party values on edges
     #     print(table(unlist(strsplit(gsub("(.*) \\[ (.*) \\]_(.*) \\[ (.*) \\]",
@@ -295,56 +301,57 @@ if(!file.exists("networks-ch.rda") | update) {
     #                 exclude = NULL))
     
     # Emile Coulonvaux, PLP [ 47 ]
-    edges$uid = gsub("\\[ PLP \\]", "[ PVV ]", edges$uid)
+    edges$e = gsub("\\[ PLP \\]", "[ PVV ]", edges$e)
     
     # Jan Decorte INDEP/ROSSEM [ 48 ]
-    edges$uid = gsub("Jan Decorte \\[ INDEP \\]", "Jan Decorte [ ROSSEM ]", edges$uid)
+    edges$e = gsub("Jan Decorte \\[ INDEP \\]", "Jan Decorte [ ROSSEM ]", edges$e)
     
     # Arthur Honoré Buysse, libéral flamand [ 49-50 ]
-    edges$uid = gsub("\\[ LIB \\]", "[ PVV ]", edges$uid)
+    edges$e = gsub("\\[ LIB \\]", "[ PVV ]", edges$e)
     
     # Karin(e) Jiroflée [ 51 ]
-    edges$uid = gsub("Karine Jiroflée", "Karin Jiroflée", edges$uid)
+    edges$e = gsub("Karine Jiroflée", "Karin Jiroflée", edges$e)
     
     # Sabien (Lahaye-)Battheu [ 51-54 ]
-    edges$uid = gsub("Sabien Lahaye-Battheu", "Sabien Battheu", edges$uid)
+    edges$e = gsub("Sabien Lahaye-Battheu", "Sabien Battheu", edges$e)
     
     # party code fixes [53]
-    edges$uid = gsub("Els Van Hoof \\[ 0 \\]", "Els Van Hoof [ CD&V - N-VA ]", edges$uid)
-    edges$uid = gsub("Stefaan De Clercq \\[ 0 \\]", "Stefaan De Clercq [ CD&V ]", edges$uid)
-    edges$uid = gsub("Myriam Delacroix-Rolin \\[ 0 \\]", "Myriam Delacroix-Rolin [ cdH ]", edges$uid)
-    edges$uid = gsub("Fatma Pehlivan \\[ 0 \\]", "Fatma Pehlivan [ sp.a ]", edges$uid)
-        
-    edges$uid = gsub("!", "", edges$uid)
-    edges$uid = gsub("\\[ (Agalev-)?(ECOLO|Ecolo)(-Groen)? \\]", "[ ECOLO ]", edges$uid)
-    # edges$uid = gsub("\\[ (PS|SP|sp.a)(-spirit)?(\\+Vl\\.Pro)? \\]", "[ SOC ]", edges$uid)
-    edges$uid = gsub("\\[ PS \\]", "[ SOC-F ]", edges$uid)
-    edges$uid = gsub("\\[ (SP|sp.a)(-spirit)?(\\+Vl\\.Pro)? \\]", "[ SOC-V ]", edges$uid)
-    edges$uid = gsub("\\[ (PVV|Open Vld|VLD) \\]", "[ LIB-V ]", edges$uid)
-    edges$uid = gsub("\\[ (MR|FDF|PRL|FDFPPW|PRLFDF) \\]", "[ LIB-F ]", edges$uid)
-    edges$uid = gsub("\\[ (VU|VU-ID|N-VA) \\]", "[ VOLKS ]", edges$uid)
-    edges$uid = gsub("\\[ (CVP|CD&V) \\]", "[ C-DEM-V ]", edges$uid)
-    edges$uid = gsub("\\[ (PSC|cdH) \\]", "[ C-DEM-F ]", edges$uid)
-    edges$uid = gsub("\\[ CD&V - N-VA \\]", "[ C-DEM-V/VOLKS ]", edges$uid)
+    edges$e = gsub("Els Van Hoof \\[ 0 \\]", "Els Van Hoof [ CD&V - N-VA ]", edges$e)
+    edges$e = gsub("Stefaan De Clercq \\[ 0 \\]", "Stefaan De Clercq [ CD&V ]", edges$e)
+    edges$e = gsub("Myriam Delacroix-Rolin \\[ 0 \\]", "Myriam Delacroix-Rolin [ cdH ]", edges$e)
+    edges$e = gsub("Fatma Pehlivan \\[ 0 \\]", "Fatma Pehlivan [ sp.a ]", edges$e)
+    
+    edges$e = gsub("!", "", edges$e)
+    edges$e = gsub("\\[ (Agalev-)?(ECOLO|Ecolo)(-Groen)? \\]", "[ ECOLO ]", edges$e)
+    # edges$e = gsub("\\[ (PS|SP|sp.a)(-spirit)?(\\+Vl\\.Pro)? \\]", "[ SOC ]", edges$e)
+    edges$e = gsub("\\[ PS \\]", "[ SOC-F ]", edges$e)
+    edges$e = gsub("\\[ (SP|sp.a)(-spirit)?(\\+Vl\\.Pro)? \\]", "[ SOC-V ]", edges$e)
+    edges$e = gsub("\\[ (PVV|Open Vld|VLD) \\]", "[ LIB-V ]", edges$e)
+    edges$e = gsub("\\[ (MR|FDF|PRL|FDFPPW|PRLFDF) \\]", "[ LIB-F ]", edges$e)
+    edges$e = gsub("\\[ (VU|VU-ID|N-VA) \\]", "[ VOLKS ]", edges$e)
+    edges$e = gsub("\\[ (CVP|CD&V) \\]", "[ C-DEM-V ]", edges$e)
+    edges$e = gsub("\\[ (PSC|cdH) \\]", "[ C-DEM-F ]", edges$e)
+    edges$e = gsub("\\[ CD&V - N-VA \\]", "[ C-DEM-V/VOLKS ]", edges$e)
+    
     # special case of party coalition [ 52 ]
     if(grepl("52", k)) {
-      edges$uid = gsub("\\[ VOLKS \\]", "[ C-DEM-V/VOLKS ]", edges$uid)
-      edges$uid = gsub("\\[ C-DEM-V \\]", "[ C-DEM-V/VOLKS ]", edges$uid)
-      edges$uid = gsub("Luc Sevenhans \\[ C-DEM-V/VOLKS \\]", "Luc Sevenhans [ VLAAMS ]", edges$uid)
+      edges$e = gsub("\\[ VOLKS \\]", "[ C-DEM-V/VOLKS ]", edges$e)
+      edges$e = gsub("\\[ C-DEM-V \\]", "[ C-DEM-V/VOLKS ]", edges$e)
+      edges$e = gsub("Luc Sevenhans \\[ C-DEM-V/VOLKS \\]", "Luc Sevenhans [ VLAAMS ]", edges$e)
     }
-    edges$uid = gsub("\\[ VB \\]", "[ VLAAMS ]", edges$uid)
-    edges$uid = gsub("\\[ ONAFH \\]", "[ INDEP ]", edges$uid)
+    edges$e = gsub("\\[ VB \\]", "[ VLAAMS ]", edges$e)
+    edges$e = gsub("\\[ ONAFH \\]", "[ INDEP ]", edges$e)
     
     # last fixes (leave at end)
-    edges$uid = gsub("Lisette Nelis-Van Liedekerke \\[ LIB-V \\]",
-                     "Lisette Nelis-Van Liedekerke [ C-DEM-V ]", edges$uid)
-    edges$uid = gsub("Philippe Dallons \\[ SOC-F \\]", "Philippe Dallons [ ECOLO ]", edges$uid)
-    edges$uid = gsub("Pierrette Cahay-André \\[ LIB-F \\]", "Pierrette Cahay-André [ C-DEM-F ]", edges$uid)
-    edges$uid = gsub("Richard Fournaux \\[ C-DEM-F \\]", "Richard Fournaux [ LIB-F ]", edges$uid)
-    edges$uid = gsub("Vincent Decroly \\[ INDEP \\]", "Vincent Decroly [ ECOLO ]", edges$uid)
+    edges$e = gsub("Lisette Nelis-Van Liedekerke \\[ LIB-V \\]",
+                   "Lisette Nelis-Van Liedekerke [ C-DEM-V ]", edges$e)
+    edges$e = gsub("Philippe Dallons \\[ SOC-F \\]", "Philippe Dallons [ ECOLO ]", edges$e)
+    edges$e = gsub("Pierrette Cahay-André \\[ LIB-F \\]", "Pierrette Cahay-André [ C-DEM-F ]", edges$e)
+    edges$e = gsub("Richard Fournaux \\[ C-DEM-F \\]", "Richard Fournaux [ LIB-F ]", edges$e)
+    edges$e = gsub("Vincent Decroly \\[ INDEP \\]", "Vincent Decroly [ ECOLO ]", edges$e)
     
     e = unlist(strsplit(gsub("(.*) \\[ (.*) \\]_(.*) \\[ (.*) \\]",
-                             "\\2;\\4", edges$uid), ";"))
+                             "\\2;\\4", edges$e), ";"))
     
     if(any(!e %in% names(colors))) {
       
@@ -353,8 +360,8 @@ if(!file.exists("networks-ch.rda") | update) {
       
     }
     
-    edges = data.frame(i = gsub("(.*)_(.*)", "\\1", edges$uid),
-                       j = gsub("(.*)_(.*)", "\\2", edges$uid),
+    edges = data.frame(i = gsub("(.*)_(.*)", "\\1", edges$e),
+                       j = gsub("(.*)_(.*)", "\\2", edges$e),
                        w = edges[, 2], n = edges[, 3],
                        stringsAsFactors = FALSE)
     
@@ -362,7 +369,10 @@ if(!file.exists("networks-ch.rda") | update) {
     
     n = network(edges[, 1:2 ], directed = FALSE)
     n %n% "title" = paste("Chambre, législature", gsub("\\D", "", k))
-    n %n% "n_bills" = nrow(a)
+
+    n %n% "n_bills" = nrow(b)
+    n %n% "n_total" = nrow(subset(a, type == "PROPOSITIONS"))
+    n %n% "n_sponsors" = table(subset(a, type == "PROPOSITIONS")$n_au)
     
     n %v% "party" = gsub("(.*) \\[ (.*) \\]", "\\2", network.vertex.names(n))
     
@@ -377,7 +387,7 @@ if(!file.exists("networks-ch.rda") | update) {
     n %v% "sex" = s[ network.vertex.names(n), "sexe" ]
     n %v% "nyears" = s[ network.vertex.names(n), "nyears" ]
     n %v% "url" = s[ network.vertex.names(n), "url" ]
-    n %v% "photo" = s[ network.vertex.names(n), "photo" ]
+    n %v% "photo" = as.character(gsub("/site/wwwroot/images/cv/|.gif$", "", s[ network.vertex.names(n), "photo" ]))
     
     network::set.edge.attribute(n, "source", edges[, 1])
     network::set.edge.attribute(n, "target", edges[, 2])
@@ -459,6 +469,12 @@ if(!file.exists("networks-ch.rda") | update) {
     
     print(table(n %v% "party", exclude = NULL))
     
+    # number of bills cosponsored
+    nb = sapply(network.vertex.names(n), function(x) {
+      nrow(subset(b, grepl(x, authors) | grepl(x, cosponsors)))
+    })
+    n %v% "n_bills" = as.vector(nb)
+    
     n %v% "size" = as.numeric(cut(n %v% "degree", quantile(n %v% "degree"), include.lowest = TRUE))
     g = suppressWarnings(ggnet(n, size = 0, segment.alpha = 1/2,
                                segment.color = party) +
@@ -470,10 +486,10 @@ if(!file.exists("networks-ch.rda") | update) {
                                  legend.text = element_text(size = 16)) +
                            guides(size = FALSE, color = guide_legend(override.aes = list(alpha = 1/3, size = 6))))
     
-    ggsave(gsub("csv", "pdf", gsub("sponsors", "plots/network", file)), g, width = 12, height = 9)
-    ggsave(gsub("csv", "jpg", gsub("sponsors", "plots/network", file)), g + theme(legend.position = "none"),
+    ggsave(gsub("csv", "pdf", gsub("data/sponsors-ch", "plots/net_ch", file)), g, width = 12, height = 9)
+    ggsave(gsub("csv", "jpg", gsub("data/sponsors-ch", "plots/net_ch", file)), g + theme(legend.position = "none"),
            width = 9, height = 9, dpi = 72)
-    
+        
     assign(paste0("net_ch", gsub("\\D", "", k)), n)
     assign(paste0("edges_ch", gsub("\\D", "", k)), edges)
     assign(paste0("bills_ch", gsub("\\D", "", k)), a)
@@ -485,11 +501,12 @@ if(!file.exists("networks-ch.rda") | update) {
             
       rgb = t(col2rgb(colors[ names(colors) %in% as.character(n %v% "party") ]))
       mode = "fruchtermanreingold"
-      meta = list(creator = "rgexf", description = paste0(mode, " placement"),
-                  keywords = "Parliament, Belgium")
+      meta = list(creator = "rgexf",
+                  description = paste(mode, "placement", nrow(b), "bills"),
+                  keywords = "parliament, belgium")
       
-      node.att = data.frame(name = network.vertex.names(n),
-                            party = n %v% "party",
+      node.att = data.frame(party = n %v% "party",
+                            bills = n %v% "n_bills",
                             distance = round(n %v% "distance", 1),
                             url = n %v% "url",
                             photo = n %v% "photo",
@@ -501,42 +518,45 @@ if(!file.exists("networks-ch.rda") | update) {
       relations = data.frame(
         source = as.numeric(factor(n %e% "source", levels = levels(factor(people$label)))),
         target = as.numeric(factor(n %e% "target", levels = levels(factor(people$label)))),
-        weight = n %e% "weight", count = n %e% "count"
+        weight = round(n %e% "weight", 2), count = n %e% "count"
       )
       relations = na.omit(relations)
+      
+      # check all weights are positive after rounding
+      stopifnot(all(relations$weight > 0))
       
       nodecolors = lapply(node.att$party, function(x)
         data.frame(r = rgb[x, 1], g = rgb[x, 2], b = rgb[x, 3], a = .5))
       nodecolors = as.matrix(rbind.fill(nodecolors))
       
       # node placement
-      net = as.matrix.network.adjacency(n)
-      position = do.call(paste0("gplot.layout.", mode), list(net, NULL))
-      position = as.matrix(cbind(position, 1))
+      position = do.call(paste0("gplot.layout.", mode),
+                         list(as.matrix.network.adjacency(n), NULL))
+      position = as.matrix(cbind(round(position, 1), 1))
       colnames(position) = c("x", "y", "z")
       
-      # compress floats
-      position[, "x"] = round(position[, "x"], 2)
-      position[, "y"] = round(position[, "y"], 2)
+      # clean up vertex names
+      people$label = gsub("(.*) \\[ (.*) \\]", "\\1", people$label)
       
-      write.gexf(nodes = people,
-                 edges = relations[, -3:-4 ],
-                 edgesWeight = round(relations[, 3], 3),
-                 nodesAtt = node.att,
+      # save with compressed floats
+      write.gexf(nodes = people, nodesAtt = node.att,
+                 edges = relations[, 1:2 ], edgesWeight = relations[, 3],
                  nodesVizAtt = list(position = position, color = nodecolors,
                                     size = round(n %v% "degree", 1)),
                  # edgesVizAtt = list(size = relations[, 4]),
-                 defaultedgetype = "undirected", meta = meta,
-                 output = gexf)
+                 defaultedgetype = "undirected", meta = meta, output = gexf)
       
     }
     
   }
   
-  save(list = ls(pattern = "(net_ch|edges_ch|bills_ch)\\d{2}"), file = "networks-ch.rda")
+  save(list = ls(pattern = "(net_ch|edges_ch|bills_ch)\\d{2}"), file = "data/net_ch.rda")
+  
+  if(export)
+    zip("net_ch.zip", files = dir(pattern = "net_ch\\d{2}.gexf"))
   
 }
 
-load("networks-ch.rda")
+load("data/net_ch.rda")
 
 # job's done
