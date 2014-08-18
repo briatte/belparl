@@ -62,6 +62,7 @@ order = names(colors)
 # settings
 
 update = TRUE
+plot = TRUE
 export = TRUE
 
 # scrapers

@@ -371,12 +371,11 @@ if(!file.exists("data/net_ch.rda") | update) {
     n %n% "title" = paste("Chambre, législature", gsub("\\D", "", k))
 
     n %n% "n_bills" = nrow(b)
-    n %n% "n_total" = nrow(subset(a, type == "PROPOSITIONS"))
     n %n% "n_sponsors" = table(subset(a, type == "PROPOSITIONS")$n_au)
     
-    n %v% "party" = gsub("(.*) \\[ (.*) \\]", "\\2", network.vertex.names(n))
+    n %v% "party" = gsub("(.*)\\s\\[\\s(.*)\\s\\]", "\\2", network.vertex.names(n))
     
-    network.vertex.names(n) = gsub("(.*) \\[ (.*) \\]", "\\1", network.vertex.names(n))
+    network.vertex.names(n) = gsub("(.*)\\s\\[\\s(.*)\\s\\]", "\\1", network.vertex.names(n))
 
     # append to sponsors data
     s = merge(data.frame(nom = network.vertex.names(n), party = n%v% "party"),
@@ -400,7 +399,7 @@ if(!file.exists("data/net_ch.rda") | update) {
     
     # subset
     
-    found = gsub("(.*) \\[ (.*) \\]", "\\1", network.vertex.names(n))
+    found = gsub("(.*)\\s\\[\\s(.*)\\s\\]", "\\1", network.vertex.names(n))
     known = unique(deputes$nom[ deputes$legislature == gsub("\\D", "", k) ])
 
     if(length(known)) {
@@ -421,7 +420,7 @@ if(!file.exists("data/net_ch.rda") | update) {
     nn = graph.edgelist(as.matrix(edges[, 1:2 ]), directed = FALSE)
     E(nn)$weight = edges[, 3]
     
-    i = gsub("(.*) \\[ (.*) \\]", "\\2", V(nn)$name)
+    i = gsub("(.*)\\s\\[\\s(.*)\\s\\]", "\\2", V(nn)$name)
     i[ i %in% c("ROSSEM", "LDD", "FN", "", "INDEP") ] = NA # very small groups
     
     nn = nn - which(is.na(i))
@@ -461,8 +460,8 @@ if(!file.exists("data/net_ch.rda") | update) {
     n %v% "clustering" = wdeg$clustering    # local
     n %n% "clustering" = clustering_w(tnet) # global
     
-    i = colors[ gsub("(.*) \\[ (.*) \\]", "\\2", n %e% "source") ]
-    j = colors[ gsub("(.*) \\[ (.*) \\]", "\\2", n %e% "target") ]
+    i = colors[ gsub("(.*)\\s\\[\\s(.*)\\s\\]", "\\2", n %e% "source") ]
+    j = colors[ gsub("(.*)\\s\\[\\s(.*)\\s\\]", "\\2", n %e% "target") ]
     
     party = as.vector(i)
     party[ i != j ] = "#AAAAAA"
@@ -536,7 +535,7 @@ if(!file.exists("data/net_ch.rda") | update) {
       colnames(position) = c("x", "y", "z")
       
       # clean up vertex names
-      people$label = gsub("(.*) \\[ (.*) \\]", "\\1", people$label)
+      people$label = gsub("(.*)\\s\\[\\s(.*)\\s\\]", "\\1", people$label)
       
       # save with compressed floats
       write.gexf(nodes = people, nodesAtt = node.att,
@@ -550,10 +549,10 @@ if(!file.exists("data/net_ch.rda") | update) {
     
   }
   
-  save(list = ls(pattern = "(net_ch|edges_ch|bills_ch)\\d{2}"), file = "data/net_ch.rda")
+  save(list = ls(pattern = "^(net|edges|bills)_ch\\d{2}$"), file = "data/net_ch.rda")
   
   if(export)
-    zip("net_ch.zip", files = dir(pattern = "net_ch\\d{2}.gexf"))
+    zip("net_ch.zip", files = dir(pattern = "^net_ch\\d{2}\\.gexf$"))
   
 }
 

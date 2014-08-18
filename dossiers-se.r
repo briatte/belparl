@@ -295,16 +295,16 @@ if(!file.exists("data/net_se.rda") | update) {
     }))
     
     # raw edge counts
-    count = table(edges$uid)
+    count = table(edges$e)
     
     # Newman-Fowler weights (weighted quantity of bills cosponsored)
-    edges = aggregate(w ~ uid, function(x) sum(1 / x), data = edges)
+    edges = aggregate(w ~ e, function(x) sum(1 / x), data = edges)
     
     # raw counts
-    edges$count = as.vector(count[ edges$uid ])
+    edges$count = as.vector(count[ edges$e ])
     
     e = unlist(strsplit(gsub("(.*) \\[ (.*) \\]_(.*) \\[ (.*) \\]",
-                             "\\2;\\4", edges$uid), ";"))
+                             "\\2;\\4", edges$e), ";"))
     
     if(any(!e %in% names(colors))) {
       
@@ -313,8 +313,8 @@ if(!file.exists("data/net_se.rda") | update) {
       
     }
 
-    edges = data.frame(i = gsub("(.*)_(.*)", "\\1", edges$uid),
-                       j = gsub("(.*)_(.*)", "\\2", edges$uid),
+    edges = data.frame(i = gsub("(.*)_(.*)", "\\1", edges$e),
+                       j = gsub("(.*)_(.*)", "\\2", edges$e),
                        w = edges$w, n = edges[, 3])
     
     # network
@@ -323,7 +323,6 @@ if(!file.exists("data/net_se.rda") | update) {
     n %n% "title" = paste("Sénat, législature", k)
     
     n %n% "n_bills" = nrow(data)
-    n %n% "n_total" = nrow(subset(bills, type == "PROPOSITIONS" & grepl(paste0("^", k), uid)))
     n %n% "n_sponsors" = table(subset(bills, type == "PROPOSITIONS" & grepl(paste0("^", k), uid))$n_au)
     
     n %v% "url" = as.character(b[ network.vertex.names(n), "sid" ])
@@ -415,20 +414,24 @@ if(!file.exists("data/net_se.rda") | update) {
     })
     n %v% "n_bills" = as.vector(nb)
 
-    n %v% "size" = as.numeric(cut(n %v% "degree", quantile(n %v% "degree"), include.lowest = TRUE))
-    g = suppressWarnings(ggnet(n, size = 0, segment.alpha = 1/2,
-                               segment.color = party) +
-                           geom_point(alpha = 1/3, aes(size = n %v% "size", color = n %v% "party")) +
-                           geom_point(alpha = 1/2, aes(size = min(n %v% "size"), color = n %v% "party")) +
-                           scale_size_continuous(range = c(6, 12)) +
-                           scale_color_manual("", values = colors, breaks = order) +
-                           theme(legend.key.size = unit(1, "cm"),
-                                 legend.text = element_text(size = 16)) +
-                           guides(size = FALSE, color = guide_legend(override.aes = list(alpha = 1/3, size = 6))))
-    
-    ggsave(paste0("plots/net_se", k, ".pdf"), g, width = 12, height = 9)
-    ggsave(paste0("plots/net_se", k, ".jpg"), g + theme(legend.position = "none"),
-           width = 9, height = 9, dpi = 72)
+    if(plot) {
+      
+      n %v% "size" = as.numeric(cut(n %v% "degree", quantile(n %v% "degree"), include.lowest = TRUE))
+      g = suppressWarnings(ggnet(n, size = 0, segment.alpha = 1/2,
+                                 segment.color = party) +
+                             geom_point(alpha = 1/3, aes(size = n %v% "size", color = n %v% "party")) +
+                             geom_point(alpha = 1/2, aes(size = min(n %v% "size"), color = n %v% "party")) +
+                             scale_size_continuous(range = c(6, 12)) +
+                             scale_color_manual("", values = colors, breaks = order) +
+                             theme(legend.key.size = unit(1, "cm"),
+                                   legend.text = element_text(size = 16)) +
+                             guides(size = FALSE, color = guide_legend(override.aes = list(alpha = 1/3, size = 6))))
+      
+      ggsave(paste0("plots/net_se", k, ".pdf"), g, width = 12, height = 9)
+      ggsave(paste0("plots/net_se", k, ".jpg"), g + theme(legend.position = "none"),
+             width = 9, height = 9, dpi = 72)
+      
+    }
     
     assign(paste0("net_se", k), n)
     assign(paste0("edges_se", k), edges)
@@ -476,7 +479,7 @@ if(!file.exists("data/net_se.rda") | update) {
       colnames(position) = c("x", "y", "z")
       
       # clean up vertex names
-      people$label = gsub("(.*) \\[ (.*) \\]", "\\1", people$label)
+      people$label = gsub("(.*)\\s\\[\\s(.*)\\s\\]", "\\1", people$label)
       
       write.gexf(nodes = people, nodesAtt = node.att,
                  edges = relations[, 1:2 ], edgesWeight = relations[, 3],
@@ -489,10 +492,10 @@ if(!file.exists("data/net_se.rda") | update) {
     
   }
   
-  save(list = ls(pattern = "net_se\\d{2}"), file = "data/net_se.rda")
+  save(list = ls(pattern = "^(net|edges|bills)_se\\d{2}$"), file = "data/net_se.rda")
   
   if(export)
-    zip("net_se.zip", files = dir(pattern = "net_se\\d{2}.gexf"))
+    zip("net_se.zip", files = dir(pattern = "^net_se\\d{2}\\.gexf$"))
   
 }
 
