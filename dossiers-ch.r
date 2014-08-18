@@ -43,7 +43,7 @@ for(i in unique(deputes$photo)) {
   if(!file.exists(photo) | !file.info(photo)$size)
     try(download.file(paste0("http://www.lachambre.be", i), photo, mode = "wb", quiet = TRUE), silent = TRUE)
   if(!file.exists(photo) | !file.info(photo)$size) {
-    file.remove(photo)
+    file.remove(photo) # will warn if missing
     deputes$photo[ deputes$photo == i ] = NA
   } else {
     deputes$photo[ deputes$photo == i ] = gsub("photos_ch/|.gif$", "", photo)
@@ -524,7 +524,7 @@ if(!file.exists("data/net_ch.rda") | update) {
       # check all weights are positive after rounding
       stopifnot(all(relations$weight > 0))
       
-      nodecolors = lapply(node.att$party, function(x)
+      nodecolors = lapply(n %v% "party", function(x)
         data.frame(r = rgb[x, 1], g = rgb[x, 2], b = rgb[x, 3], a = .5))
       nodecolors = as.matrix(rbind.fill(nodecolors))
       

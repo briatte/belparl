@@ -246,7 +246,7 @@ for(i in unique(b$photo)) {
     try(download.file(paste0("http://www.senate.be/www/?MItabObj=persoon&MIcolObj=foto&MInamObj=persoonid&MIvalObj=",
                              i, "&MItypeObj=image/gif"), photo, mode = "wb", quiet = TRUE), silent = TRUE)
   if(!file.exists(photo) | !file.info(photo)$size) {
-    file.remove(photo)
+    file.remove(photo) # will warn if missing
     b$photo[ b$photo == i ] = NA
   } else {
     b$photo[ b$photo == i ] = gsub("photos_se/|.gif$", "", photo)
@@ -410,7 +410,7 @@ if(!file.exists("data/net_se.rda") | update) {
 
     # number of bills cosponsored
     nb = sapply(n %v% "url", function(x) {
-      sum(unlist(strsplit(data$authors, ";")) == x) # ids are non-unique numbers
+      sum(unlist(strsplit(data$authors, ";")) == x) # ids are varying-length numbers
     })
     n %v% "n_bills" = as.vector(nb)
 
@@ -468,7 +468,7 @@ if(!file.exists("data/net_se.rda") | update) {
       # check all weights are positive after rounding
       stopifnot(all(relations$weight > 0))
       
-      nodecolors = lapply(node.att$party, function(x)
+      nodecolors = lapply(n %v% "party", function(x)
         data.frame(r = rgb[x, 1], g = rgb[x, 2], b = rgb[x, 3], a = .5))
       nodecolors = as.matrix(rbind.fill(nodecolors))
       
