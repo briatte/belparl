@@ -408,9 +408,9 @@ if(!file.exists("data/net_se.rda") | update) {
     
     print(table(n %v% "party", exclude = NULL))
 
-    # number of bills (co)sponsored
+    # number of bills cosponsored
     nb = sapply(n %v% "url", function(x) {
-      sum(unlist(strsplit(data$authors, ";")) == x)
+      sum(unlist(strsplit(data$authors, ";")) == x) # ids are non-unique numbers
     })
     n %v% "n_bills" = as.vector(nb)
 

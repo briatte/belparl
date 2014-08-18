@@ -470,7 +470,7 @@ if(!file.exists("data/net_ch.rda") | update) {
     
     # number of bills cosponsored
     nb = sapply(network.vertex.names(n), function(x) {
-      nrow(subset(b, grepl(x, authors) | grepl(x, cosponsors)))
+      nrow(subset(b, grepl(x, authors) | grepl(x, cosponsors))) # ids are unique names [ party ]
     })
     n %v% "n_bills" = as.vector(nb)
     
