@@ -421,7 +421,7 @@ if(!file.exists("data/net_ch.rda") | update) {
     E(nn)$weight = edges[, 3]
     
     i = gsub("(.*)\\s\\[\\s(.*)\\s\\]", "\\2", V(nn)$name)
-    i[ i %in% c("ROSSEM", "LDD", "FN", "", "INDEP") ] = NA # very small groups
+    i[ i %in% c("ROSSEM", "LDD", "FN", "", "INDEP") ] = NA # ignoring very small groups
     
     nn = nn - which(is.na(i))
     i = as.numeric(factor(i[ !is.na(i) ]))
@@ -489,9 +489,9 @@ if(!file.exists("data/net_ch.rda") | update) {
     ggsave(gsub("csv", "jpg", gsub("data/sponsors-ch", "plots/net_ch", file)), g + theme(legend.position = "none"),
            width = 9, height = 9, dpi = 72)
         
-    assign(paste0("net_ch", gsub("\\D", "", k)), n)
-    assign(paste0("edges_ch", gsub("\\D", "", k)), edges)
-    assign(paste0("bills_ch", gsub("\\D", "", k)), a)
+    assign(paste0("net_be_ch", gsub("\\D", "", k)), n)
+    assign(paste0("edges_be_ch", gsub("\\D", "", k)), edges)
+    assign(paste0("bills_be_ch", gsub("\\D", "", k)), a)
     
     # gexf
     
@@ -549,13 +549,13 @@ if(!file.exists("data/net_ch.rda") | update) {
     
   }
   
-  save(list = ls(pattern = "^(net|edges|bills)_ch\\d{2}$"), file = "data/net_ch.rda")
+  save(list = ls(pattern = "^(net|edges|bills)_be_ch\\d{2}$"), file = "data/net_be_ch.rda")
   
   if(export)
     zip("net_ch.zip", files = dir(pattern = "^net_ch\\d{2}\\.gexf$"))
   
 }
 
-load("data/net_ch.rda")
+load("data/net_be_ch.rda")
 
 # job's done

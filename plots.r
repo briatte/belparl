@@ -1,7 +1,7 @@
-m = sapply(mget(ls(pattern = "net_(ch|se)")), function(x) x %n% "modularity")
+m = sapply(mget(ls(pattern = "net_be_(ch|se)")), function(x) x %n% "modularity")
 m = cbind(names(m), m, 
-          sapply(mget(ls(pattern = "net_(ch|se)")), function(x) x %n% "modularity_walktrap"),
-          sapply(mget(ls(pattern = "net_(ch|se)")), function(x) x %n% "modularity_louvain"))
+          sapply(mget(ls(pattern = "net_be_(ch|se)")), function(x) x %n% "modularity_walktrap"),
+          sapply(mget(ls(pattern = "net_be_(ch|se)")), function(x) x %n% "modularity_louvain"))
 m = data.frame(id = m[, 1],
                ch = ifelse(substr(m[, 1], 5, 6) == "se", "Sénat", "Chambre"),
                legislature = gsub("\\D", "", m[, 1]),
@@ -27,7 +27,7 @@ ggsave("plots/modularity.png", width = 12, height = 6, dpi = 72)
 #   labs(y = "Empirical / Maximized\n", x = NULL) +
 #   theme(legend.position = "none", panel.grid = element_blank())
 
-# by = lapply(mget(ls(pattern = "net_(ch|se)")), function(x) {
+# by = lapply(mget(ls(pattern = "net_be_(ch|se)")), function(x) {
 #   y = data.frame(id = gsub("(.*),(.*)", "\\1", x %n% "title"),
 #                  legislature = gsub("\\D", "", x %n% "title"),
 #                  party = x %v% "party",

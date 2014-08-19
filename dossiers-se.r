@@ -361,7 +361,7 @@ if(!file.exists("data/net_se.rda") | update) {
     E(nn)$weight = edges[, 3]
     
     i = b[ V(nn)$name, "parti" ]
-    i[ i %in% c("ROSSEM", "LDD", "FN", "", "INDEP") ] = NA # very small groups
+    i[ i %in% c("ROSSEM", "LDD", "FN", "", "INDEP") ] = NA # ignoring very small groups
     
     nn = nn - which(is.na(i))
     i = as.numeric(factor(i[ !is.na(i) ]))
@@ -433,9 +433,9 @@ if(!file.exists("data/net_se.rda") | update) {
       
     }
     
-    assign(paste0("net_se", k), n)
-    assign(paste0("edges_se", k), edges)
-    assign(paste0("bills_se", k), subset(bills, type == "PROPOSITIONS" & grepl(paste0("^", k), uid)))
+    assign(paste0("net_be_se", k), n)
+    assign(paste0("edges_be_se", k), edges)
+    assign(paste0("bills_be_se", k), subset(bills, type == "PROPOSITIONS" & grepl(paste0("^", k), uid)))
     
     # gexf
     
@@ -492,13 +492,13 @@ if(!file.exists("data/net_se.rda") | update) {
     
   }
   
-  save(list = ls(pattern = "^(net|edges|bills)_se\\d{2}$"), file = "data/net_se.rda")
+  save(list = ls(pattern = "^(net|edges|bills)_be_se\\d{2}$"), file = "data/net_be_se.rda")
   
   if(export)
     zip("net_se.zip", files = dir(pattern = "^net_se\\d{2}\\.gexf$"))
   
 }
 
-load("data/net_se.rda")
+load("data/net_be_se.rda")
 
 # job's done
