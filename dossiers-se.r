@@ -237,6 +237,11 @@ if(!file.exists("data/senateurs.csv")) {
 }
 
 b = read.csv("data/senateurs.csv", stringsAsFactors = FALSE)
+b$sex = NULL
+
+# file with lots of manually imputed sex codes
+s = read.csv("data/senateurs-details.csv", stringsAsFactors = FALSE)
+b = merge(s, b, by = "sid")
 
 # download photos
 b$photo = b$sid
@@ -325,6 +330,10 @@ if(!file.exists("data/net_se.rda") | update) {
     n %n% "n_bills" = nrow(data)
     n %n% "n_sponsors" = table(subset(bills, type == "PROPOSITIONS" & grepl(paste0("^", k), uid))$n_au)
     
+    n %v% "born" = b[ network.vertex.names(n), "born" ]
+    n %v% "sex" = b[ network.vertex.names(n), "sex" ]
+    n %v% "nyears" = b[ network.vertex.names(n), "nyears" ]
+
     n %v% "url" = as.character(b[ network.vertex.names(n), "sid" ])
     n %v% "photo" = as.character(b[ network.vertex.names(n), "photo" ])
     
