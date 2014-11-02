@@ -280,7 +280,7 @@ if(!file.exists("data/net_ch.rda") | update) {
       e = unique(apply(e, 1, function(x) paste0(sort(x), collapse = "_")))
       
       if(length(e))
-        return(data.frame(e, w = length(d) - 1))
+        return(data.frame(e, w = length(d) - 1)) # number of cosponsors
       else
         return(data.frame())
       
