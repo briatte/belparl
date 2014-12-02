@@ -1,7 +1,4 @@
-
-rm(list = ls())
-
-# packages
+# hi Belgium
 
 library(igraph)
 library(ggplot2)

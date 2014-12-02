@@ -239,7 +239,7 @@ if(!file.exists("data/senateurs.csv")) {
 b = read.csv("data/senateurs.csv", stringsAsFactors = FALSE)
 b$sex = NULL
 
-# file with lots of manually imputed sex codes
+# fill with lots of manually imputed sex codes
 s = read.csv("data/senateurs-details.csv", stringsAsFactors = FALSE)
 b = merge(s, b, by = "sid")
 
