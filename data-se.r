@@ -83,7 +83,7 @@ if(!file.exists("data/dossiers-se.log")) {
       write.csv(d, file, row.names = FALSE)
       
       cat("Scraped", nrow(d), "rows over",
-          length(unique(d$dossier)), "dossiers in",
+          n_distinct(d$dossier), "dossiers in",
           round(as.numeric(Sys.time() - time), 1), "minutes\n\n")
       
     }
