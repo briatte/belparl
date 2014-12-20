@@ -277,8 +277,8 @@ for(k in dir) {
   
 }
 
-b = rbind.fill(lapply(dir("data", pattern = "sponsors-ch", full.names = TRUE),
-                      read.csv, stringsAsFactors = FALSE))
+b = rbind_all(lapply(dir("data", pattern = "sponsors-ch", full.names = TRUE),
+                     read.csv, stringsAsFactors = FALSE))
 
 b$legislature = substr(b$uid, 1, 2)
 

@@ -181,7 +181,7 @@ for(k in dir) {
 }
 
 bills = lapply(dir("data", pattern = "sponsors-se\\d{2}.csv", full.names = TRUE), read.csv, stringsAsFactors = FALSE)
-bills = rbind.fill(bills)
+bills = rbind_all(bills)
 
 bills$legislature = substr(bills$uid, 1, 2)
 
