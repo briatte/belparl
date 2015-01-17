@@ -137,6 +137,7 @@ for(k in 48:53) { # rev(unique(b$legislature))) {
   n %v% "url" = as.character(s[ network.vertex.names(n), "url" ])  
   n %v% "sex" = as.character(s[ network.vertex.names(n), "sexe" ])
   n %v% "born" = as.numeric(substr(s[ network.vertex.names(n), "annee_naissance" ], 1, 4)) # safer
+  n %v% "constituency" = as.character(s[ network.vertex.names(n), "constituency" ])
   n %v% "party" = as.character(s[ network.vertex.names(n), "party" ])
   n %v% "partyname" = as.character(groups[ s[ network.vertex.names(n), "party" ] ])
   n %v% "lr" = as.numeric(scores[ n %v% "party" ])
@@ -188,7 +189,7 @@ for(k in 48:53) { # rev(unique(b$legislature))) {
   #
   
   if(gexf)
-    get_gexf(paste0("net_be_ch", k), n, c(meta[1], "Chambre"), mode, colors)
+    get_gexf(paste0("net_be_ch", k), n, c(meta[1], "Chambre"), mode, colors, extra = "constituency")
   
 }
 

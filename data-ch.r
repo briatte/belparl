@@ -63,6 +63,73 @@ for(i in unique(deputes$photo)) {
 
 deputes$bio = str_clean(gsub("▀ ", "", deputes$bio))
 
+# biographies that failed to scrape properly
+deputes$bio[ deputes$url == "showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=06536&lactivity=54" ] = "Député socialiste (PS) de la circonscription électorale du Brabant wallon depuis le 30 juillet 2014, en remplacement de monsieur André Flahaut, élu ministre du gouvernement de la Communauté française. Membre du groupe PS. Né à Mons le 10 juillet 1967."
+deputes$bio[ deputes$url == "showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=00951&lactivity=54" ] = "Député démocrate Humaniste (cdH) de la circonscription électorale de Bruxelles-Capitale depuis le 30 juillet 2014, en remplacement de madame Céline Fremault, élue membre du gouvernement de la Région de Bruxelles-Capitale. Député de la circonscription électorale de Bruxelles-Hal-Vilvorde du 20 mars 2008 au 13 juin 2010, du 7 décembre 2011 au 16 mai 2013 et du 16 mai 2013 au 25 mai 2014. Membre du groupe cdH. Né à Fataki (Congo belge) le 17 janvier 1958. Sénateur du 13 juin 1999 au 18 mai 2003 et du 12 juillet 2007 au 20 mars 2008. Docteur en médecine, chirurgie et accouchements. Spécialisation en médecine tropicale. Certificat d'épidémiologie et de biostatistique. Maîtrise en politique internationale. Maîtrise en management des institutions de soins de santé. Ancien directeur général de 'Handicap International'. Ancien directeur général adjoint de Médecins sans Frontières. Vice-président de l'Hôpital Brugman. Président du comité de gestion du Fonds des maladies professionnelles. Ancien conseiller communal de Bruxelles. Ancien échevin de Bruxelles. Conseiller communal de Woluwe-Saint-Pierre. Chevalier de l'Ordre de Léopold. Président de la commission des Naturalisations."
+deputes$bio[ deputes$url == "showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=04491&lactivity=54" ] = "Député libéral (Open Vld) de la circonscription électorale d Anvers du 7 décembre 2011 au 25 mai 2014 et depuis le 30 juillet 2014, en remplacement de madame Annemie Turtelboom, élue ministre du gouvernement flamand le 25 juillet 2014. Député de la circonscription électorale d'Anvers du 7 décembre 2011 au 25 mai 2014. Membre du groupe Open Vld. Né à Turnhout le 25 avril 1965. Licencié en sciences économiques appliquées. Chef d'entreprise. Ancien conseiller provincial (Anvers) Bourgmestre de Merksplas."
+
+# constituencies (simplified to province due to changing nature over elections)
+y = str_extract(deputes$bio, "(.*)\\d+?")
+y = gsub("(.*)(arrondissement|arrondsissement|circonscription( électoral)?(e)?|kieskring)", "", y)
+y = gsub("^\\s(d\\s|d'|d\u0092|de\\s|du\\s|de\\sla\\s)+", "", y)
+y = gsub("\\s(depuis|sedert)(.*)|\\sdu\\s\\d$|\\s\\(PS\\)", "", y)
+y = str_trim(gsub("\\s-\\s", "-", y))
+
+# fill in a few values that are not captured by the code above
+y[ deputes$url == "showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=00632&lactivity=48" ] = "Termonde"
+y[ deputes$url == "showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=00106&lactivity=51" ] = "Bruxelles-Hal-Vilvorde"
+
+# Province_du_Brabant_flamand
+y[ y %in% c("Brabant flamand") ] = "Province_du_Brabant_flamand"
+y[ y %in% c("Bruxelles", "Bruxelles-Capitale") ] = "Province_du_Brabant_flamand" # "Bruxelles"
+y[ y %in% c("Bruxelles-Hal-Vilvorde", "Bruxelles-Halle-Vilvorde") ] = "Province_du_Brabant_flamand" # "Bruxelles-Hal-Vilvorde"
+y[ y %in% c("Louvain") ] = "Province_du_Brabant_flamand" # "Louvain"
+
+# Province_du_Brabant_wallon
+y[ y %in% c("Brabant wallon", "Brabant-wallon") ] = "Province_du_Brabant_wallon"
+y[ y %in% c("Nivelles") ] = "Province_du_Brabant_wallon"
+
+# Province_de_Flandre-Occidentale
+y[ y %in% c("Flandre occidentale", "Flandre Occidentale") ] = "Province_de_Flandre-Occidentale"
+y[ y %in% c("Courtrai", "Courtrai-Roulers-Tielt", "Roulers-Tielt") ] = "Province_de_Flandre-Occidentale"
+y[ y %in% c("Furnes-Dixmude-Ostende", "Furnes-Dixmude-Ypres-Ostende", "Ypres") ] = "Province_de_Flandre-Occidentale"
+y[ y %in% c("Bruges") ] = "Province_de_Flandre-Occidentale"
+
+# Province_de_Flandre-Orientale
+y[ y %in% c("Flandre orientale") ] = "Province_de_Flandre-Orientale"
+y[ y %in% c("Gand-Eeklo") ] = "Province_de_Flandre-Orientale"
+y[ y %in% c("Saint-Nicolas", "Saint-Nicolas-Termonde", "Termonde") ] = "Province_de_Flandre-Orientale"
+y[ y %in% c("Alost", "Alost-Audenarde", "Audenarde") ] = "Province_de_Flandre-Orientale"
+
+# Province_de_Hainaut
+y[ y %in% c("Hainaut", "Henegouwen") ] = "Province_de_Hainaut"
+y[ y %in% c("Charleroi", "Charleroi-Thuin", "Thuin") ] = "Province_de_Hainaut"
+y[ y %in% c("Mons", "Mons-Soignies", "Soignies") ] = "Province_de_Hainaut"
+y[ y %in% c("Tournai-Ath-Mouscron", "Ath-Tournai-Mouscron") ] = "Province_de_Hainaut"
+
+# Province_d'Anvers
+y[ y %in% c("Anvers") ] = "Province_d'Anvers"
+y[ y %in% c("Malines", "Malines-Turnhout", "Turnhout") ] = "Province_d'Anvers"
+
+# Province_de_Liège
+y[ y %in% c("Liège") ] = "Province_de_Liège"
+y[ y %in% c("Verviers") ] = "Province_de_Liège"
+y[ y %in% c("Huy-Waremme") ] = "Province_de_Liège"
+
+# Province_de_Limbourg
+y[ y %in% c("Hasselt", "Hasselt-Tongres- Maaseik", "Hasselt-Tongres-Maaseik", "Tongres-Maaseik") ] = "Province_de_Limbourg"
+y[ y %in% c("Limbourg", "Limburg") ] = "Province_de_Limbourg"
+
+# Province_de_Luxembourg
+y[ y %in% c("Arlon-Marche-en-Famenne-Bastogne", "Arlon-Marche-en-Famenne-Bastogne-Neufchâteau-Virton", "Neufchâteau-Virton") ] = "Province_de_Luxembourg"
+y[ y %in% c("Luxembourg") ] = "Province_de_Luxembourg"
+
+# Province_de_Namur
+y[ y %in% c("Namur", "Namur-Dinant-Philippeville", "Dinant-Philippeville") ] = "Province_de_Namur"
+
+table(y[ !grepl("_", y)], exclude = NULL)
+deputes$constituency = y
+
 deputes$sexe = str_extract(deputes$bio, "Député(e)?")
 deputes$sexe[ deputes$nom == "Juliette Boulet" ] = "Députée" # Flemish text
 deputes$sexe[ deputes$nom == "Paul Meeus" ] = "Député" # typo
