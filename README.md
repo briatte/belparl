@@ -63,6 +63,7 @@ Chambre:
 - `bio` -- biography text
 - `sexe` -- gender (F/M), imputed from birth information: "Né(e)"
 - `annee_naissance` -- year of birth (int)
+- `constituency` -- constituency, stored as the string to its Wikipedia Francophone entry
 
 Party affiliations are not in the data because they are hardcoded in the sponsorships.
 
