@@ -19,7 +19,7 @@ for(k in 48:53) { # rev(unique(b$legislature))) {
   # directed edge list
   #
   
-  edges = rbind_all(lapply(data$sponsors, function(d) {
+  edges = bind_rows(lapply(data$sponsors, function(d) {
     
     w = unlist(strsplit(d, ";"))
     

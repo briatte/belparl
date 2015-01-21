@@ -13,7 +13,7 @@ for(k in unique(bills$legislature)) {
   # directed edge list
   #
   
-  edges = rbind_all(lapply(data$authors, function(d) {
+  edges = bind_rows(lapply(data$authors, function(d) {
     
     w = unlist(strsplit(d, ";"))
     
