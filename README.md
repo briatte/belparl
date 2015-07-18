@@ -120,6 +120,6 @@ Including the minor parties in the modularity computations does not affect the r
 |ROSSEM        |Libertair, Direct, Democratisch   |
 |IND           |Independent                       |
 
-# CREDITS
+# THANKS
 
 Thanks to [Bram](https://twitter.com/brabram) for feedback.
