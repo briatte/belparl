@@ -1,7 +1,8 @@
 This repository contains code to build cosponsorship networks from bills passed in the [lower][ch] and [upper][se] chambers of the Belgian Parliament.
 
-- [interactive demo](http://briatte.org/belparl)
-- [static plots](http://briatte.org/belparl/plots.html)
+- [interactive demo](http://f.briatte.org/parlviz/belparl)
+- [static plots](http://f.briatte.org/parlviz/belparl/plots.html)
+- [more countries](https://github.com/briatte/parlnet)
 
 [ch]: http://www.lachambre.be/
 [se]: http://www.senate.be/
