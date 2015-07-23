@@ -2,7 +2,9 @@
 
 for(k in 48:53) { # rev(unique(b$legislature))) {
   
-  cat("Chambre, législature", k)
+  cat("Chambre, législature", k,
+      years[ as.character(k) ], "to",
+      years[ as.character(k + 1) ])
   
   data = subset(b, legislature == k & type == "PROPOSITION DE LOI" & n_a > 1)
   
@@ -64,8 +66,11 @@ for(k in 48:53) { # rev(unique(b$legislature))) {
   edges = merge(edges, aggregate(w ~ j, function(x) sum(1 / x), data = self))
   edges$gsw = edges$nfw / edges$w
   
+  # sanity check
+  stopifnot(edges$gsw <= 1)
+  
   # final edge set: cosponsor, first author, weights
-  edges = edges[, c("i", "j", "raw", "nfw", "gsw") ]
+  edges = select(edges, i, j, raw, nfw, gsw)
   
   cat(nrow(edges), "edges, ")
   
@@ -76,7 +81,9 @@ for(k in 48:53) { # rev(unique(b$legislature))) {
   n = network(edges[, 1:2 ], directed = TRUE)
 
   n %n% "country" = meta[1]
-  n %n% "title" = paste("Chambre législature", k)
+  n %n% "title" = paste("Chambre", k,
+                        years[ as.character(k) ], "to",
+                        years[ as.character(k + 1) ])
 
   n %n% "n_bills" = nrow(data)
   n %n% "n_sponsors" = table(subset(b, legislature == k & type == "PROPOSITION DE LOI")$n_a)
@@ -148,31 +155,21 @@ for(k in 48:53) { # rev(unique(b$legislature))) {
   })
   n %v% "nyears" = as.numeric(s[ network.vertex.names(n), "nyears" ])
   
-  #
-  # weighted measures
-  #
-  
-  n = get_modularity(n, weights = "raw")
-  n = get_modularity(n, weights = "nfw")
-  n = get_modularity(n, weights = "gsw")
-  
-  n = get_centrality(n, weights = "raw")
-  n = get_centrality(n, weights = "nfw")
-  n = get_centrality(n, weights = "gsw")
+	# unweighted degree
+	n %v% "degree" = degree(n)
+	q = n %v% "degree"
+	q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
   
   #
   # network plot
   #
   
   if(plot) {
-    
-    q = n %v% "degree"
-    q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
-    
-    ggnet_save(n, file = paste0("plots/net_be_ch", k),
-               i = colors[ s[ n %e% "source", "party" ] ],
-               j = colors[ s[ n %e% "target", "party" ] ],
-               q, colors, order)
+        
+    save_plot(n, file = paste0("plots/net_be_ch", k),
+              i = colors[ s[ n %e% "source", "party" ] ],
+              j = colors[ s[ n %e% "target", "party" ] ],
+              q, colors, order)
     
   }
   
@@ -189,7 +186,7 @@ for(k in 48:53) { # rev(unique(b$legislature))) {
   #
   
   if(gexf)
-    get_gexf(paste0("net_be_ch", k), n, c(meta[1], "Chambre"), mode, colors, extra = "constituency")
+    save_gexf(paste0("net_be_ch", k), n, c(meta[1], "Chambre"), mode, colors, extra = "constituency")
   
 }
 

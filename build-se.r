@@ -1,9 +1,11 @@
 # bills = read.csv("data/bills-se.csv", stringsAsFactors = FALSE)
 bills = subset(bills, type == "PROPOSITION DE LOI")
 
-for(k in unique(bills$legislature)) {
+for(k in unique(bills$legislature) %>% as.integer) {
   
-  cat("Sénat, législature", k)
+  cat("Sénat, législature", k,
+      years[ as.character(k) ], "to",
+      years[ as.character(k + 1) ])
   
   data = subset(bills, legislature == k & n_au > 1)
   
@@ -59,8 +61,11 @@ for(k in unique(bills$legislature)) {
   edges = merge(edges, aggregate(w ~ j, function(x) sum(1 / x), data = self))
   edges$gsw = edges$nfw / edges$w
   
+  # sanity check
+  stopifnot(edges$gsw <= 1)
+  
   # final edge set: cosponsor, first author, weights
-  edges = edges[, c("i", "j", "raw", "nfw", "gsw") ]
+  edges = select(edges, i, j, raw, nfw, gsw)
   
   cat(nrow(edges), "edges, ")
   
@@ -71,7 +76,7 @@ for(k in unique(bills$legislature)) {
   n = network(edges[, 1:2 ], directed = TRUE)
   
   n %n% "country" = meta[1]
-  n %n% "title" = paste("Sénat législature", k)
+  n %n% "title" = paste("Sénat", years[ k ], "to", years[ k + 1 ])
   
   n %n% "n_bills" = nrow(data)
   n %n% "n_sponsors" = table(subset(bills, legislature == k)$n_au)
@@ -101,38 +106,28 @@ for(k in unique(bills$legislature)) {
   })
   n %v% "nyears" = as.numeric(b[ network.vertex.names(n), "nyears" ])
   
+	# unweighted degree
+	n %v% "degree" = degree(n)
+	q = n %v% "degree"
+	q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
+	
   set.edge.attribute(n, "source", as.character(edges[, 1])) # cosponsor
   set.edge.attribute(n, "target", as.character(edges[, 2])) # first author
   
   set.edge.attribute(n, "raw", edges$raw) # raw edge counts
   set.edge.attribute(n, "nfw", edges$nfw) # Newman-Fowler weights
   set.edge.attribute(n, "gsw", edges$gsw) # Gross-Shalizi weights
-  
-  #
-  # weighted measures
-  #
-  
-  n = get_modularity(n, weights = "raw")
-  n = get_modularity(n, weights = "nfw")
-  n = get_modularity(n, weights = "gsw")
-  
-  n = get_centrality(n, weights = "raw")
-  n = get_centrality(n, weights = "nfw")
-  n = get_centrality(n, weights = "gsw")
-  
+    
   #
   # network plot
   #
   
   if(plot) {
     
-    q = n %v% "degree"
-    q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
-    
-    ggnet_save(n, file = paste0("plots/net_be_se", k),
-               i = colors[ b[ n %e% "source", "parti" ] ],
-               j = colors[ b[ n %e% "target", "parti" ] ],
-               q, colors, order)
+    save_plot(n, file = paste0("plots/net_be_se", k),
+              i = colors[ b[ n %e% "source", "parti" ] ],
+              j = colors[ b[ n %e% "target", "parti" ] ],
+              q, colors, order)
     
   }
   
@@ -149,7 +144,7 @@ for(k in unique(bills$legislature)) {
   #
   
   if(gexf)
-    get_gexf(paste0("net_be_se", k), n, c(meta[1], "Sénat"), mode, colors)
+    save_gexf(paste0("net_be_se", k), n, c(meta[1], "Sénat"), mode, colors)
   
 }
 

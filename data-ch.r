@@ -69,7 +69,7 @@ deputes$bio[ deputes$url == "showpage.cfm?section=/depute&language=fr&rightmenu=
 deputes$bio[ deputes$url == "showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=04491&lactivity=54" ] = "Député libéral (Open Vld) de la circonscription électorale d Anvers du 7 décembre 2011 au 25 mai 2014 et depuis le 30 juillet 2014, en remplacement de madame Annemie Turtelboom, élue ministre du gouvernement flamand le 25 juillet 2014. Député de la circonscription électorale d'Anvers du 7 décembre 2011 au 25 mai 2014. Membre du groupe Open Vld. Né à Turnhout le 25 avril 1965. Licencié en sciences économiques appliquées. Chef d'entreprise. Ancien conseiller provincial (Anvers) Bourgmestre de Merksplas."
 
 # constituencies (simplified to province due to changing nature over elections)
-y = str_extract(deputes$bio, "(.*)\\d+?")
+y = gsub("(.*)\\d+?(.*)", "\\1", deputes$bio)
 y = gsub("(.*)(arrondissement|arrondsissement|circonscription( électoral)?(e)?|kieskring)", "", y)
 y = gsub("^\\s(d\\s|d'|d\u0092|de\\s|du\\s|de\\sla\\s)+", "", y)
 y = gsub("\\s(depuis|sedert)(.*)|\\sdu\\s\\d$|\\s\\(PS\\)", "", y)
