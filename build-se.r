@@ -1,7 +1,6 @@
-# bills = read.csv("data/bills-se.csv", stringsAsFactors = FALSE)
 bills = subset(bills, type == "PROPOSITION DE LOI")
 
-for(k in unique(bills$legislature) %>% as.integer) {
+for(k in 53:49) { # too few bills in S. 54
   
   cat("Sénat, législature", k,
       years[ as.character(k) ], "to",
@@ -17,12 +16,24 @@ for(k in unique(bills$legislature) %>% as.integer) {
   
   edges = bind_rows(lapply(data$authors, function(d) {
     
-    w = unlist(strsplit(d, ";"))
-    
-    e = expand.grid(i = b$nom[ b$sid %in% w ],
-                    j = b$nom[ b$sid == w[1]], stringsAsFactors = FALSE)
-    
-    return(data.frame(e, w = length(w) - 1)) # number of cosponsors
+    w = unlist(strsplit(d, ";")) %>% as.integer
+
+    # remove missing sponsors; if first author is missing, first nonmissing
+    # cosponsor is used in replacement (happens only in very few cases)
+    w = w[ w %in% b$sid ]
+
+    if(length(w) > 0) {
+      
+      e = expand.grid(i = b$nom[ b$sid %in% w ],
+                      j = b$nom[ b$sid == w[1]], stringsAsFactors = FALSE)
+      
+      return(data.frame(e, w = length(w) - 1)) # number of cosponsors
+
+    } else {
+      
+      return(NULL)
+      
+    }
     
   }))
   
@@ -76,7 +87,9 @@ for(k in unique(bills$legislature) %>% as.integer) {
   n = network(edges[, 1:2 ], directed = TRUE)
   
   n %n% "country" = meta[1]
-  n %n% "title" = paste("Sénat", years[ k ], "to", years[ k + 1 ])
+  n %n% "title" = paste("Sénat",
+                        years[ as.character(k) ], "to",
+                        years[ as.character(k + 1) ])
   
   n %n% "n_bills" = nrow(data)
   n %n% "n_sponsors" = table(subset(bills, legislature == k)$n_au)

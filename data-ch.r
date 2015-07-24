@@ -18,12 +18,11 @@ if(!file.exists("data/deputes.csv")) {
       
       hh = htmlParse(paste0("http://www.lachambre.be/kvvcr/", j))
       hh = data.frame(legislature = i,
-                      nom = str_clean(xpathSApply(hh, "//div[@id='story']/*/h2", xmlValue)),
-                      mandate = paste0(xpathSApply(hh, "//div[@id='story']/*/a[contains(@href, 'lactivity=')]",
-                                                   xmlValue), collapse = ";"),
+                      nom = str_clean(xpathSApply(hh, "//form[@id='myform']/center/h2", xmlValue)),
+                      mandate = paste0(xpathSApply(hh, "//div[@id='section']/*/a[contains(@href, 'lactivity=')]", xmlValue), collapse = ";"),
                       photo = xpathSApply(hh, "//img[contains(@src, 'cv/')]/@src"),
                       url = j,
-                      bio = xpathSApply(hh, "//div[@id='story']/table[2]/tr[@valign='top'][2]/td/p", xmlValue))
+                      bio = xpathSApply(hh, "//table[2]/tr[@valign='top'][2]/td/p", xmlValue))
       deputes = rbind(deputes, hh)
       cat(".")
       
@@ -44,18 +43,23 @@ deputes = read.csv("data/deputes.csv", stringsAsFactors = FALSE)
 for(i in unique(deputes$photo)) {
 
   photo = gsub("/site/wwwroot/images/cv", "photos_ch", i)
+
+  if(!file.exists(photo)) {
+    
+    h = GET(paste0("http://www.lachambre.be", i))
+    
+    if(h$status_code == 200)
+      writeLines(content(h, "text"), photo)
+    
+  }
   
-  if(!file.exists(photo))
-    try(download.file(paste0("http://www.lachambre.be", i), photo, mode = "wb", quiet = TRUE), silent = TRUE)
+  if(file.exists(photo)) {
   
-  if(!file.info(photo)$size) {
-  
-    file.remove(photo) # will warn if missing
-    deputes$photo[ deputes$photo == i ] = NA
+    deputes$photo[ deputes$photo == i ] = gsub("photos_ch/|.gif$", "", photo)
   
   } else {
     
-    deputes$photo[ deputes$photo == i ] = gsub("photos_ch/|.gif$", "", photo)
+    deputes$photo[ deputes$photo == i ] = NA
   
   }
 
@@ -72,7 +76,7 @@ deputes$bio[ deputes$url == "showpage.cfm?section=/depute&language=fr&rightmenu=
 y = gsub("(.*)\\d+?(.*)", "\\1", deputes$bio)
 y = gsub("(.*)(arrondissement|arrondsissement|circonscription( électoral)?(e)?|kieskring)", "", y)
 y = gsub("^\\s(d\\s|d'|d\u0092|de\\s|du\\s|de\\sla\\s)+", "", y)
-y = gsub("\\s(depuis|sedert)(.*)|\\sdu\\s\\d$|\\s\\(PS\\)", "", y)
+y = gsub("\\s(depuis|sedert)(.*)|\\sdu\\s$|\\s\\(PS\\)", "", y)
 y = str_trim(gsub("\\s-\\s", "-", y))
 
 # fill in a few values that are not captured by the code above
@@ -160,80 +164,64 @@ deputes$url = gsub("(.*)key=(.*)", "\\2", deputes$url)
 deputes$url = gsub("(\\d+)&(.*)", "\\1", deputes$url)
 
 #
-# scrape dossiers in legislatures 47-53
+# scrape dossiers in legislatures 47-54
 #
 
-if(!file.exists("data/dossiers-ch.log")) {
+root = "http://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=fr&cfm=Listdocument.cfm?legislat="
+cat("Scraping raw lower chamber data...\n")
+
+for(i in 47:54) {
   
-  root = "http://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=fr&cfm=Listdocument.cfm?legislat="
-  cat("Scraping raw lower chamber data (be patient, takes a few hours)...\n")
-  
-  sink("data/dossiers-ch.log")
-  cat("Launched:", as.character(Sys.time()), "\n\n")
-  
-  # do not add 54 just yet (not enough data) -- 2014-07-25
-  for(i in 47:53) {
+  file = paste0("data/dossiers-ch", i, ".csv")
+  if(!file.exists(file)) {
     
-    file = paste0("data/dossiers-ch", i, ".csv")
-    if(!file.exists(file)) {
+    cat("Scraping legislature", i, "... ")
+    
+    dossiers = data.frame()
+    
+    h = htmlParse(paste0(root, i))
+    h = xpathSApply(h, "//a[@class='link']/@href")
+    
+    cat(length(h), "pages\n")
+    for(j in h) {
       
-      cat("Scraping legislature", i, "... ")
+      hh = htmlParse(paste0("http://www.dekamer.be/kvvcr/", j))
+      hh = xpathSApply(hh, "//div[@class='linklist_0']/a/@href")
+      hh = gsub("(.*)&dossierID=(.*)", "\\2", as.character(hh))
       
-      time = Sys.time()
-      dossiers = data.frame()
+      cat("Page", sprintf("%3.0f", which(h == j)),
+          "scraping", sprintf("%3.0f", length(hh)), "dossiers\n")
       
-      h = htmlParse(paste0(root, i))
-      h = xpathSApply(h, "//a[@class='link']/@href")
-      
-      cat(length(h), "pages\n")
-      for(j in h) {
+      for(k in hh) {
         
-        hh = htmlParse(paste0("http://www.dekamer.be/kvvcr/", j))
-        hh = xpathSApply(hh, "//div[@class='linklist_0']/a/@href")
-        hh = gsub("(.*)&dossisink()
-                  erID=(.*)", "\\2", as.character(hh))
-        
-        cat("Page", sprintf("%3.0f", which(h == j)),
-            "scraping", sprintf("%3.0f", length(hh)), "dossiers\n")
-        
-        for(k in hh) {
+        t = paste0("http://www.dekamer.be/kvvcr/showpage.cfm?section=flwb&language=fr&leftmenu=none&cfm=/site/wwwcfm/search/fiche.cfm?ID=", i, "K", k, "&db=FLWB&legislat=", i)
+        t = try(readHTMLTable(t, which = 1, header = FALSE, stringsAsFactors = FALSE))
+        if(!"try-error" %in% class(t)) {
           
-          t = paste0("http://www.dekamer.be/kvvcr/showpage.cfm?section=flwb&language=fr&leftmenu=none&cfm=/site/wwwcfm/search/fiche.cfm?ID=", i, "K", k, "&db=FLWB&legislat=", i)
-          t = try(readHTMLTable(t, which = 1, header = FALSE, stringsAsFactors = FALSE))
-          if(!"try-error" %in% class(t)) {
-            
-            names(t) = c("variable", "value")
-            t$variable = str_clean(t$variable)
-            t$value = str_clean(t$value)
-            
-            t = data.frame(legislature = i, dossier = k,
-                           t[ t$variable != "" | !is.na(t$value), ])
-            dossiers = rbind(dossiers, t)
-            
-          } else {
-            
-            cat("Error: dossier", k, "legislature", i, "\n")
-            
-          }
+          names(t) = c("variable", "value")
+          t$variable = str_clean(t$variable)
+          t$value = str_clean(t$value)
+          
+          t = data.frame(legislature = i, dossier = k,
+                         t[ t$variable != "" | !is.na(t$value), ])
+          dossiers = rbind(dossiers, t)
+          
+        } else {
+          
+          cat("Error: dossier", k, "legislature", i, "\n")
           
         }
         
       }
       
-      write.csv(dossiers, file, row.names = FALSE)
-      
-      cat("Scraped", nrow(dossiers), "rows over",
-          n_distinct(dossiers$dossier), "dossiers in",
-          round(as.numeric(Sys.time() - time), 1), "minutes\n\n")
-      
     }
     
+    write.csv(dossiers, file, row.names = FALSE)
     
-    
+    cat("Scraped", nrow(dossiers), "rows over",
+        n_distinct(dossiers$dossier), "dossiers\n")
+      
   }
-  
-  cat("Ended:", as.character(Sys.time()), "\n\n")  
-  sink()
   
 }
 
@@ -404,7 +392,7 @@ b$sponsors = gsub("Fatma Pehlivan \\[ 0 \\]", "Fatma Pehlivan [ sp.a ]", b$spons
 # party simplifications
 #
 
-b$sponsors = gsub("\\[ Groen \\]", "[ ECOLO ]", b$sponsors)
+b$sponsors = gsub("\\[ Groen(!)? \\]", "[ ECOLO ]", b$sponsors)
 b$sponsors = gsub("\\[ (Agalev-)?(ECOLO|Ecolo)(-Groen)?(!)? \\]", "[ ECOLO ]", b$sponsors)
 # b$sponsors = gsub("\\[ (PS|SP|sp.a)(-spirit)?(\\+Vl\\.Pro)? \\]", "[ SOC ]", b$sponsors)
 b$sponsors = gsub("\\[ PS \\]", "[ SOC-F ]", b$sponsors)
@@ -416,7 +404,9 @@ b$sponsors = gsub("\\[ (CVP|CD&V) \\]", "[ CDEM-V ]", b$sponsors)
 b$sponsors = gsub("\\[ (PSC|cdH) \\]", "[ CDEM-F ]", b$sponsors)
 b$sponsors = gsub("\\[ CD&V - N-VA \\]", "[ CDEM-V/VOLKS ]", b$sponsors)
 b$sponsors = gsub("\\[ VB \\]", "[ VLAAMS ]", b$sponsors)
-b$sponsors = gsub("\\[ (ONAFH|INDEP) \\]", "[ IND ]", b$sponsors)
+b$sponsors = gsub("\\[ PTB-GO! \\]", "[ PT ]", b$sponsors)
+b$sponsors = gsub("\\[ MLD \\]", "[ DLB ]", b$sponsors) # Laurent Louis, always alone
+b$sponsors = gsub("\\[ (ONAFH|INDEP|INDEP-ONAFH) \\]", "[ IND ]", b$sponsors)
 
 # last fixes on duplicates (leave at end)
 b$sponsors = gsub("Lisette Nelis-Van Liedekerke \\[ LIB-V \\]",

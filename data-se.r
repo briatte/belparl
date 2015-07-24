@@ -1,103 +1,90 @@
 # scrape bills
 
-if(!file.exists("data/dossiers-se.log")) {
+root = "http://www.senate.be"
+cat("Scraping raw upper chamber data...\n")
+
+for(k in 6:1) {
   
-  root = "http://www.senate.be"
-  cat("Scraping raw upper chamber data (be patient, takes a few hours)...\n")
-  
-  sink("data/dossiers-se.log")
-  cat("Launched:", as.character(Sys.time()), "\n\n")
-  
-  for(k in 1:5) {
+  file = paste0("data/dossiers-se", k + 48, ".csv")
+  if(!file.exists(file)) {
     
-    file = paste0("data/dossiers-se", k + 48, ".csv")
-    if(!file.exists(file)) {
+    cat("Scraping legislature", k + 48, "... ")
+    h = htmlParse("http://www.senate.be/www/?MIval=/Dossiers/NieuweDossiers&LANG=fr")
+    
+    h = xpathSApply(h, paste0("//a[contains(@href, 'LEG=", k, "&')]/@href"))
+    cat(length(h), "pages\n\n")
+    
+    d = data.frame()
+    for(i in h) {
       
-      cat("Scraping legislature", k + 48, "... ")
-      h = htmlParse("http://www.senate.be/www/?MIval=/Dossiers/NieuweDossiers&LANG=fr")
+      cat("Page", sprintf("%3.0f", which(i == h)), "scraping ")
       
-      h = xpathSApply(h, paste0("//a[contains(@href, 'LEG=", k, "&')]/@href"))
-      cat(length(h), "pages\n\n")
+      hh = htmlParse(paste0(root, i))
+      hh = xpathSApply(hh, "//a[contains(@href, 'NR=')]/@href")
       
-      time = Sys.time()
-      d = data.frame()
-      for(i in h) {
+      cat(sprintf("%3.0f", length(hh)), "dossiers\n")
+      r = data.frame()
+      
+      for(j in hh) {
         
-        cat("Page", sprintf("%3.0f", which(i == h)), "scraping ")
-        
-        hh = htmlParse(paste0(root, i))
-        hh = xpathSApply(hh, "//a[contains(@href, 'NR=')]/@href")
-        
-        cat(sprintf("%3.0f", length(hh)), "dossiers\n")
-        r = data.frame()
-        
-        for(j in hh) {
+        t = try(htmlParse(paste0(root, j)))
+        if(!"try-error" %in% class(t)) {
           
-          t = try(htmlParse(paste0(root, j)))
-          if(!"try-error" %in% class(t)) {
+          amd = which(readHTMLTable(t)[[3]]$Titre == "Amendements")
+          
+          if(length(amd)) {
             
-            amd = which(readHTMLTable(t)[[3]]$Titre == "Amendements")
+            amd = xpathSApply(t, "//table[3]/tr/td[1]/a[1]/@href")[ amd ]
+            amd = paste0(amd[ !grepl("lachambre", amd) ], collapse = ";")
             
-            if(length(amd)) {
-              
-              amd = xpathSApply(t, "//table[3]/tr/td[1]/a[1]/@href")[ amd ]
-              amd = paste0(amd[ !grepl("lachambre", amd) ], collapse = ";")
-              
-            } else {
-              
-              amd = NA
-              
-            }
+          } else {
             
-            type = readHTMLTable(t)[[3]]$Titre[1]
-            if(!length(type)) type = NA
-            
-            status = as.character(readHTMLTable(t)[[5]][2, 2])
-            if(!length(status)) status = NA
-            
-            title = str_clean(xpathSApply(t, "//table[1]/tr/td", xmlValue)[4])
-            
-            topic = gsub("(  )+( )?", ",", xpathSApply(t, "//table[2]/tr/td", xmlValue))
-            topic = toupper(gsub(",$", "", topic))
-            
-            u = xpathSApply(t, "//a[contains(@href, 'showSenator')]/@href")
-            
-            if(length(u))
-              r = rbind(r, data.frame(legislature = 48 + as.numeric(gsub("(.*)LEG=(\\d+)(.*)", "\\2", j)),
-                                      dossier = sprintf("%04.0f", as.numeric(gsub("(.*)NR=(\\d+)(.*)", "\\2", j))),
-                                      type, status, title, topic, 
-                                      authors = paste0(paste(
-                                        xpathSApply(t, "//a[contains(@href, 'showSenator')]", xmlValue),
-                                        "[", gsub("(.*)ID=(\\d+)(.*)", "\\2", u), "]"),
-                                        collapse = ";"),
-                                      amendments = amd, stringsAsFactors = FALSE))
+            amd = NA
             
           }
           
+          type = readHTMLTable(t)[[3]]$Titre[1]
+          if(!length(type)) type = NA
+          
+          status = as.character(readHTMLTable(t)[[5]][2, 2])
+          if(!length(status)) status = NA
+          
+          title = str_clean(xpathSApply(t, "//table[1]/tr/td", xmlValue)[4])
+          
+          topic = gsub("(  )+( )?", ",", xpathSApply(t, "//table[2]/tr/td", xmlValue))
+          topic = toupper(gsub(",$", "", topic))
+          
+          u = xpathSApply(t, "//a[contains(@href, 'showSenator')]/@href")
+          
+          if(length(u))
+            r = rbind(r, data.frame(legislature = 48 + as.numeric(gsub("(.*)LEG=(\\d+)(.*)", "\\2", j)),
+                                    dossier = sprintf("%04.0f", as.numeric(gsub("(.*)NR=(\\d+)(.*)", "\\2", j))),
+                                    type, status, title, topic, 
+                                    authors = paste0(paste(
+                                      xpathSApply(t, "//a[contains(@href, 'showSenator')]", xmlValue),
+                                      "[", gsub("(.*)ID=(\\d+)(.*)", "\\2", u), "]"),
+                                      collapse = ";"),
+                                    amendments = amd, stringsAsFactors = FALSE))
+          
         }
-        
-        d = rbind(r, d)
         
       }
       
-      write.csv(d, file, row.names = FALSE)
-      
-      cat("Scraped", nrow(d), "rows over",
-          n_distinct(d$dossier), "dossiers in",
-          round(as.numeric(Sys.time() - time), 1), "minutes\n\n")
+      d = rbind(r, d)
       
     }
     
+    write.csv(d, file, row.names = FALSE)
+    
+    cat("Scraped", nrow(d), "rows over", n_distinct(d$dossier), "dossiers\n")
+    
   }
-  
-  cat("Ended:", as.character(Sys.time()), "\n")
-  sink()
   
 }
 
 # parse bills
 
-dir = dir(pattern = "data/dossiers-se\\d+.csv")
+dir = list.files("data", pattern = "dossiers-se\\d+\\.csv", full.names = TRUE)
 for(k in dir) {
   
   file = gsub("dossiers", "sponsors", k)
@@ -180,7 +167,8 @@ for(k in dir) {
   
 }
 
-bills = lapply(dir("data", pattern = "sponsors-se\\d{2}.csv", full.names = TRUE), read.csv, stringsAsFactors = FALSE)
+bills = lapply(dir("data", pattern = "sponsors-se\\d{2}.csv", full.names = TRUE), read.csv,
+               stringsAsFactors = FALSE)
 bills = bind_rows(bills)
 
 bills$legislature = substr(bills$uid, 1, 2)
@@ -203,26 +191,38 @@ bills$status[ grepl("SANS OBJET|RETIRÉ|COMMUNIQUÉ|A L'EXAMEN", bills$status) ]
 
 #print(table(bills$type, bills$status, exclude = NULL))
 
+# full list of sponsors
+a = sort(unique(unlist(strsplit(bills$authors, ";"))))
+
+# ignore sponsors with empty pages
+a = a[ !a %in% c("4078", "43496", "4624", "4595", "4388", "4346",
+                 "4297", "4289", "4193", "4118", "397", "3968",
+                 "3952", "3940", "351", "250") ]
+
 if(!file.exists("data/senateurs.csv")) {
   
   # scrape only sponsors, not full list of identified senators (link below, i = 1:5)
   # htmlParse(paste0(root, "/www/?MIval=/WieIsWie/LijstDerSenatoren&LEG=", i, "&LANG=fr"))
   
-  a = sort(unique(unlist(strsplit(bills$authors, ";"))))
   b = data.frame()
 
-  for(x in rev(a[ !a %in% c("4078", "43496") ])) {
+  for(x in rev(a)) {
     
     cat(sprintf("%3.0f", which(a == x)), "Scraping senator", str_pad(x, 4, "right"))
     
-    h = htmlParse(paste0("http://www.senate.be/www/?MIval=/showSenator&ID=", x, "&LANG=fr"), encoding = "UTF-8")
+    f = paste0("raw/senateur-", x, ".html")
+    if(!file.exists(f))
+      download.file(paste0("http://www.senate.be/www/?MIval=/showSenator&ID=", x, "&LANG=fr"),
+                    f, mode = "wb", quiet = TRUE)
+      
+    h = htmlParse(f, encoding = "UTF-8")
     sex = na.omit(str_extract(xpathSApply(h, "//table/tr", xmlValue), "Sénateur|Sénatrice"))
     man = xpathSApply(h, "//table/tr", xmlValue)
     man = man[ (which(man == "Travail parlementaire") + 1):length(man) ]
     man = unique(unlist(str_extract_all(man[ grepl("gislature", man) ], "[0-9]{4}-[0-9]{4}")))
     if(is.null(man)) man = "-"
     
-    h = data.frame(sid = x,
+    h = data.frame(sid = as.character(x),
                    nom = xpathSApply(h, "//title", xmlValue, encoding = "iso-8859-1"),
                    sex = ifelse(length(sex), sex, NA),
                    from = min(as.numeric(unlist(strsplit(man, "-"))), na.rm = TRUE),
@@ -249,12 +249,10 @@ b = read.csv("data/senateurs.csv", stringsAsFactors = FALSE)
 b$sex = NULL
 
 # senators data identify all sponsors
-# table(a %in% b$sid)
+stopifnot(as.integer(a) %in% b$sid)
 
-# fill with lots of manually imputed sex codes
-s = read.csv("data/senateurs-details.csv", stringsAsFactors = FALSE)
-b = merge(s, b, by = "sid")
-
+b$parti[ b$nom == "Lode Vereeck" ] = "Open Vld" =  # duplicated row
+b$parti[ b$nom == "Anne Lambelin" ] = "PS" # duplicated row
 b$parti[ grepl("Correspondance", b$parti, useBytes = TRUE) ] = "CD&V" # Pieter de Crem bugfix
 b$parti[ grepl("Bureau", b$parti, useBytes = TRUE) ] = "PS"     # Patrick Moriau bugfix
 b$parti[ grepl("^Priv", b$parti, useBytes = TRUE) ] = "sp.a"    # Inga Verhaert bugfix
@@ -275,6 +273,20 @@ b$parti[ b$parti %in% c("VU", "VU-ID", "N-VA") ] = "VOLKS"
 
 table(b$parti, exclude = NULL)
 
+# fix names
+b$nom = gsub("Ã¨", "è", b$nom)
+b$nom = gsub("Ã©", "é", b$nom)
+b$nom = gsub("Ãª", "ê", b$nom)
+b$nom[ b$nom == "Hermes Sanctorum - Vandevoorde" ] = "Hermes Sanctorum-Vandevoorde"
+
+# remove duplicates
+b = unique(b)
+stopifnot(!duplicated(b$sid))
+
+# fill with lots of manually imputed sex codes
+s = read.csv("data/senateurs-details.csv", stringsAsFactors = FALSE)
+b = left_join(b, s, by = "sid")
+
 # recode mandate length
 b$mandate = sapply(b$mandate, function(x) {
   x = as.numeric(unlist(str_extract_all(x, "[0-9]{4}")))
@@ -284,11 +296,6 @@ b$mandate = sapply(b$mandate, function(x) {
     paste0(seq(min(x), max(x)), collapse = ";")
 })
 # hist(1 + str_count(b$mandate, ","))
-
-# finalize names
-b$nom = gsub("Ã¨", "è", b$nom)
-b$nom = gsub("Ã©", "é", b$nom)
-b$nom = gsub("Ãª", "ê", b$nom)
 
 # check for duplicates
 rownames(b) = b$nom

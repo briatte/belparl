@@ -1,6 +1,4 @@
-# b = read.csv("data/bills-ch.csv", stringsAsFactors = FALSE)
-
-for(k in 48:53) { # rev(unique(b$legislature))) {
+for(k in 54:48) { # excluding C. 47
   
   cat("Chambre, législature", k,
       years[ as.character(k) ], "to",
@@ -81,7 +79,7 @@ for(k in 48:53) { # rev(unique(b$legislature))) {
   n = network(edges[, 1:2 ], directed = TRUE)
 
   n %n% "country" = meta[1]
-  n %n% "title" = paste("Chambre", k,
+  n %n% "title" = paste("Chambre",
                         years[ as.character(k) ], "to",
                         years[ as.character(k + 1) ])
 

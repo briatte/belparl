@@ -14,9 +14,8 @@ dir.create("plots"     , showWarnings = FALSE)
 # parameters
 
 years = c("47" = 1987, "48" = 1991, "49" = 1995, "50" = 1999, "51" = 2003,
-          "52" = 2007, "53" = 2010, "54" = 2014)
+          "52" = 2007, "53" = 2010, "54" = 2014, "55" = 2019)
 
-update = TRUE
 plot = TRUE
 gexf = TRUE
 
@@ -27,6 +26,7 @@ mode = "fruchtermanreingold"
 
 source("data-ch.r")
 source("build-ch.r")
+source("comm-ch.r")
 source("data-se.r")
 source("build-se.r")
 

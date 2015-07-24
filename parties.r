@@ -1,6 +1,7 @@
 # party colors
 
 colors = c(
+  "PT" = "#B2182B", # dark red [C.54 "PTB-GO!"]
   # "Groen" and "Agalev-Ecolo" C.47-50 and S.49-50
   # "Ecolo" or "ECOLO" C.51 and S.49-53
   # "Ecolo-Groen" C.52-53 and S.49, 52-53
@@ -35,6 +36,8 @@ colors = c(
   # "PRL" C.47-48 and S.52
   "LIB-F" = "#377EB8", # blue 
   "LIB-V" = "#80B1D3", # light blue [ VLD ]
+  "PP" = "#984EA3", # purple [C.54, no color clash with LDD]
+  "DLB" = "#444444", # dark grey [ C.54, no color clash with FN ]
   # federalists (not used)
   # "FDF" = "#F781BF", # pink [ C.47, 53 ]
   # "FDF/PPW" = "#FCCDE5", # light pink [ C.48 ]
@@ -49,6 +52,7 @@ colors = c(
 # party group names
 
 groups = c(
+  "PT" = "Worker's Party",
   "ECOLO" = "Greens",
   "SOC-F" = "Francophone Socialists",
   "SOC-V" = "Flemish Socialists",
@@ -60,6 +64,8 @@ groups = c(
   "VOLKS" = "Volksunie",
   "LIB-F" = "Francophone Liberals",
   "LIB-V" = "Flemish Liberals",
+  "PP" = "People's Party",
+  "DLB" = "Debout Les Belges!",
   "VLAAMS" = "Vlaams Blok",
   "FN" = "Front National",
   "IND" = "Independent"
@@ -68,6 +74,7 @@ groups = c(
 # ParlGov Left/Right scores
 
 scores = c(
+  "PT" = 1.3,
   "ECOLO" = 2.6,
   "SOC-F" = 2.9,
   "SOC-V" = 3.3,
@@ -79,6 +86,8 @@ scores = c(
   "VOLKS" = 6.5,
   "LIB-F" = 6.8,
   "LIB-V" = 7,
+  "PP" = 7.4,
+  "DLB" = 8.7,
   "VLAAMS" = 9.7,
   "FN" = 9.7,
   "IND" = Inf

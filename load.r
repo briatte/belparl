@@ -14,3 +14,7 @@ library(sna)
 
 library(ggplot2)
 library(grid)
+
+# extras
+
+library(httr) # handle HTTP response codes
