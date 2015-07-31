@@ -153,10 +153,10 @@ for(k in 54:48) { # excluding C. 47
   })
   n %v% "nyears" = as.numeric(s[ network.vertex.names(n), "nyears" ])
   
-	# unweighted degree
-	n %v% "degree" = degree(n)
-	q = n %v% "degree"
-	q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
+  # unweighted degree
+  n %v% "degree" = degree(n)
+  q = n %v% "degree"
+  q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
   
   #
   # network plot

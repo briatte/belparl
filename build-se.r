@@ -119,11 +119,11 @@ for(k in 53:49) { # too few bills in S. 54
   })
   n %v% "nyears" = as.numeric(b[ network.vertex.names(n), "nyears" ])
   
-	# unweighted degree
-	n %v% "degree" = degree(n)
-	q = n %v% "degree"
-	q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
-	
+  # unweighted degree
+  n %v% "degree" = degree(n)
+  q = n %v% "degree"
+  q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
+  
   set.edge.attribute(n, "source", as.character(edges[, 1])) # cosponsor
   set.edge.attribute(n, "target", as.character(edges[, 2])) # first author
   
