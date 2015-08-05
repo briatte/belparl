@@ -1,7 +1,7 @@
 # get committees for Chambre l. 54 (only one available)
 
 deputes = subset(deputes, legislature == 54)
-deputes$uid = paste0("key=", deputes$url)
+deputes$uid = str_extract(deputes$url, "key=\\w?\\d+")
 
 h = htmlParse("http://www.lachambre.be/kvvcr/showpage.cfm?section=/none&language=fr&cfm=/site/wwwcfm/comm/LstCom.cfm")
 comm = data.frame(
@@ -11,10 +11,10 @@ comm = data.frame(
   stringsAsFactors = FALSE
 )
 
-for(i in deputes$uid)
+for (i in deputes$uid)
   comm[, i ] = 0
 
-for(i in comm$l) {
+for (i in comm$l) {
   cat(comm$n[ comm$l == i ])
   h = htmlParse(paste0("http://www.lachambre.be/kvvcr/", i))
   k = xpathSApply(h, "//a[contains(@href, '.cfm?key')]/@href")
@@ -29,19 +29,17 @@ names(comm)[1:3] = c("legislature", "committee", "url")
 write.csv(cbind(comm[, 1:3 ], members = rowSums(comm[, -1:-3 ])), 
           "data/committees.csv", row.names = FALSE)
 
-colnames(comm) = gsub("key=", "", colnames(comm))
+# colnames(comm) = gsub("key=", "", colnames(comm))
 
 # assign co-memberships to networks
-for(i in 54) {
+for (i in 54) {
   
-  n = get(paste0("net_be_ch", i))
+  n = get(paste0("net_be_ch", years[ as.character(i) ]))
   
   sp = network.vertex.names(n)
-  names(sp) = n %v% "url"
+  names(sp) = str_extract(n %v% "url", "key=\\w?\\d+")
   
-  
-  missing = !names(sp) %in% colnames(comm)
-  stopifnot(!missing)
+  stopifnot(names(sp) %in% colnames(comm))
   
   m = comm[ comm$legislature == i, names(sp) ]
   
@@ -61,7 +59,7 @@ for(i in 54) {
                  stringsAsFactors = FALSE)
   e$committee = NA
   
-  for(j in 1:nrow(e))
+  for (j in 1:nrow(e))
     e$committee[ j ] = m[ e$i[ j ], e$j[ j ] ]
   
   cat(" co-memberships:",
@@ -77,12 +75,9 @@ for(i in 54) {
   stopifnot(!is.na(nn %e% "committee"))
   
   n %e% "committee" = e$committee
-  assign(paste0("net_be_ch", i), n)
+  assign(paste0("net_be_ch", years[ as.character(i) ]), n)
   
   nn %n% "committees" = as.table(rowSums(M))
-  assign(paste0("conet_be_ch", i), nn)
+  assign(paste0("conet_be_ch", years[ as.character(i) ]), nn)
   
 }
-
-save(list = ls(pattern = "^((co)?net|edges|bills)_be_ch\\d{2}$"),
-     file = "data/net_be_ch.rda")

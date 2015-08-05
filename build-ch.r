@@ -1,4 +1,4 @@
-for(k in 54:48) { # excluding C. 47
+for (k in 54:48) { # excluding C. 47
   
   cat("Chambre, législature", k,
       years[ as.character(k) ], "to",
@@ -7,7 +7,7 @@ for(k in 54:48) { # excluding C. 47
   data = subset(b, legislature == k & type == "PROPOSITION DE LOI" & n_a > 1)
   
   # special case of party coalition [ 52 ]
-  if(k == 52) {
+  if (k == 52) {
     data$sponsors = gsub("\\[ VOLKS \\]", "[ CDEM-V/VOLKS ]", data$sponsors)
     data$sponsors = gsub("\\[ CDEM-V \\]", "[ CDEM-V/VOLKS ]", data$sponsors)
     data$sponsors = gsub("Luc Sevenhans \\[ CDEM-V/VOLKS \\]", "Luc Sevenhans [ VLAAMS ]", data$sponsors)
@@ -19,7 +19,7 @@ for(k in 54:48) { # excluding C. 47
   # directed edge list
   #
   
-  edges = bind_rows(lapply(data$sponsors, function(d) {
+  edges = lapply(data$sponsors, function(d) {
     
     w = unlist(strsplit(d, ";"))
     
@@ -27,7 +27,7 @@ for(k in 54:48) { # excluding C. 47
     
     return(data.frame(d, w = length(w) - 1)) # number of cosponsors
     
-  }))
+  }) %>% bind_rows
   
   #
   # edge weights
@@ -55,10 +55,10 @@ for(k in 54:48) { # excluding C. 47
   edges = aggregate(w ~ ij, function(x) sum(1 / x), data = edges)
   
   # expand to edge list
-  edges = data.frame(i = gsub("(.*)///(.*)", "\\1", edges$ij),
+  edges = data_frame(i = gsub("(.*)///(.*)", "\\1", edges$ij),
                      j = gsub("(.*)///(.*)", "\\2", edges$ij),
                      raw = as.vector(raw[ edges$ij ]), # raw edge counts
-                     nfw = edges$w, stringsAsFactors = FALSE)
+                     nfw = edges$w)
   
   # Gross-Shalizi weights (weighted propensity to cosponsor)
   edges = merge(edges, aggregate(w ~ j, function(x) sum(1 / x), data = self))
@@ -78,12 +78,16 @@ for(k in 54:48) { # excluding C. 47
   
   n = network(edges[, 1:2 ], directed = TRUE)
 
-  n %n% "country" = meta[1]
-  n %n% "title" = paste("Chambre",
-                        years[ as.character(k) ], "to",
-                        years[ as.character(k + 1) ])
-
-  n %n% "n_bills" = nrow(data)
+  n %n% "country" = meta[ "cty" ] %>% as.character
+  n %n% "lang" = meta[ "lang" ] %>% as.character
+  n %n% "years" = paste0(years[ as.character(k) ], "-", years[ as.character(k + 1) ])
+  n %n% "legislature" = as.character(k)
+  n %n% "chamber" = meta[ "ch" ] %>% as.character
+  n %n% "type" = meta[ "type-ch" ] %>% as.character
+  n %n% "ipu" = meta[ "ipu-ch" ] %>% as.integer
+  n %n% "seats" = meta[ "seats-ch" ] %>% as.integer
+  
+  n %n% "n_cosponsored" = nrow(data)
   n %n% "n_sponsors" = table(subset(b, legislature == k & type == "PROPOSITION DE LOI")$n_a)
 
   n_au = as.vector(n_au[ network.vertex.names(n) ])
@@ -112,15 +116,14 @@ for(k in 54:48) { # excluding C. 47
   set.edge.attribute(n, "gsw", edges$gsw) # Gross-Shalizi weights
   
   # append party id to sponsors data
-  s = merge(data.frame(nom = network.vertex.names(n),
-                       party = n%v% "party", stringsAsFactors = FALSE),
+  s = merge(data_frame(nom = network.vertex.names(n), party = n%v% "party"),
             unique(deputes[ deputes$legislature == k, ]))
 
   #
   # remove a small number of unidentified sponsors
   #
 
-  if(network.size(n) != nrow(s)) {
+  if (network.size(n) != nrow(s)) {
 
     cat("Missing", network.size(n) - nrow(s), "sponsor(s):",
         paste0(network.vertex.names(n)[ !network.vertex.names(n) %in% s$nom ], 
@@ -139,35 +142,30 @@ for(k in 54:48) { # excluding C. 47
 
   rownames(s) = s$nom
   
-  n %v% "url" = as.character(s[ network.vertex.names(n), "url" ])  
-  n %v% "sex" = as.character(s[ network.vertex.names(n), "sexe" ])
-  n %v% "born" = as.numeric(substr(s[ network.vertex.names(n), "annee_naissance" ], 1, 4)) # safer
-  n %v% "constituency" = as.character(s[ network.vertex.names(n), "constituency" ])
-  n %v% "party" = as.character(s[ network.vertex.names(n), "party" ])
-  n %v% "partyname" = as.character(groups[ s[ network.vertex.names(n), "party" ] ])
-  n %v% "lr" = as.numeric(scores[ n %v% "party" ])
-  n %v% "photo" = as.character(s[ network.vertex.names(n), "photo" ])
+  n %v% "url" = s[ network.vertex.names(n), "url" ]
+  n %v% "sex" = s[ network.vertex.names(n), "sexe" ]
+  n %v% "born" = s[ network.vertex.names(n), "annee_naissance" ]
+  n %v% "constituency" = s[ network.vertex.names(n), "constituency" ]
+  n %v% "party" = s[ network.vertex.names(n), "party" ]
+  n %v% "partyname" = groups[ n %v% "party" ] %>% as.character
+  n %v% "lr" = scores[ n %v% "party" ] %>% as.numeric
+  n %v% "photo" = s[ network.vertex.names(n), "photo" ]
   # mandate years done up to start year of legislature
   s$nyears = sapply(s$mandate, function(x) {
     sum(unlist(strsplit(x, ";")) <= as.numeric(years[ as.character(k) ]))
   })
-  n %v% "nyears" = as.numeric(s[ network.vertex.names(n), "nyears" ])
-  
-  # unweighted degree
-  n %v% "degree" = degree(n)
-  q = n %v% "degree"
-  q = as.numeric(cut(q, unique(quantile(q)), include.lowest = TRUE))
+  n %v% "nyears" = s[ network.vertex.names(n), "nyears" ] %>% as.integer
   
   #
   # network plot
   #
   
-  if(plot) {
+  if (plot) {
         
-    save_plot(n, file = paste0("plots/net_be_ch", k),
+    save_plot(n, paste0("plots/net_be_ch", years[ as.character(k) ], "-", years[ as.character(k + 1) ]),
               i = colors[ s[ n %e% "source", "party" ] ],
               j = colors[ s[ n %e% "target", "party" ] ],
-              q, colors, order)
+              mode, colors)
     
   }
   
@@ -175,22 +173,21 @@ for(k in 54:48) { # excluding C. 47
   # save objects
   #
   
-  assign(paste0("net_be_ch", k), n)
-  assign(paste0("edges_be_ch", k), edges)
-  assign(paste0("bills_be_ch", k), data)
+  assign(paste0("net_be_ch", years[ as.character(k) ]), n)
+  assign(paste0("edges_be_ch", years[ as.character(k) ]), edges)
+  assign(paste0("bills_be_ch", years[ as.character(k) ]), data)
   
   #
   # export gexf
   #
   
-  if(gexf)
-    save_gexf(paste0("net_be_ch", k), n, c(meta[1], "Chambre"), mode, colors, extra = "constituency")
+  if (gexf)
+    save_gexf(n, paste0("net_be_ch", years[ as.character(k) ], "-", years[ as.character(k + 1) ]),
+              mode, colors)
   
 }
 
-save(list = ls(pattern = "^(net|edges|bills)_be_ch\\d{2}$"), file = "data/net_be_ch.rda")
-
-if(gexf)
-  zip("net_be_ch.zip", files = dir(pattern = "^net_be_ch\\d{2}\\.gexf$"))
+if (gexf)
+  zip("net_be_ch.zip", files = dir(pattern = "^net_be_ch\\d{4}-\\d{4}\\.gexf$"))
 
 # kthxbye

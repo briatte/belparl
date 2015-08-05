@@ -2,10 +2,10 @@
 # scrape full MP listing
 #
 
-if(!file.exists("data/deputes.csv")) {
+if (!file.exists("data/sponsors-ch.csv")) {
   
   deputes = data.frame()
-  for(i in 48:54) {
+  for (i in 48:54) {
     
     cat("Parsing MPs in legislature", i, "... ")
     
@@ -14,7 +14,7 @@ if(!file.exists("data/deputes.csv")) {
     
     cat(length(h), "pages\n")
     
-    for(j in h) {
+    for (j in h) {
       
       hh = htmlParse(paste0("http://www.lachambre.be/kvvcr/", j))
       hh = data.frame(legislature = i,
@@ -32,30 +32,30 @@ if(!file.exists("data/deputes.csv")) {
     
   }
   
-  write.csv(deputes, "data/deputes.csv", row.names = FALSE)
+  write.csv(deputes, "data/sponsors-ch.csv", row.names = FALSE)
   
 }
 
-deputes = read.csv("data/deputes.csv", stringsAsFactors = FALSE)
+deputes = read.csv("data/sponsors-ch.csv", stringsAsFactors = FALSE)
 
 # download photos
 
-for(i in unique(deputes$photo)) {
+for (i in unique(deputes$photo)) {
 
   photo = gsub("/site/wwwroot/images/cv", "photos_ch", i)
 
-  if(!file.exists(photo)) {
+  if (!file.exists(photo)) {
     
     h = GET(paste0("http://www.lachambre.be", i))
     
-    if(h$status_code == 200)
+    if (h$status_code == 200)
       writeLines(content(h, "text"), photo)
     
   }
   
-  if(file.exists(photo)) {
+  if (file.exists(photo)) {
   
-    deputes$photo[ deputes$photo == i ] = gsub("photos_ch/|.gif$", "", photo)
+    deputes$photo[ deputes$photo == i ] = photo
   
   } else {
     
@@ -82,6 +82,10 @@ y = str_trim(gsub("\\s-\\s", "-", y))
 # fill in a few values that are not captured by the code above
 y[ deputes$url == "showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=00632&lactivity=48" ] = "Termonde"
 y[ deputes$url == "showpage.cfm?section=/depute&language=fr&rightmenu=right_depute&cfm=cvview54.cfm?key=00106&lactivity=51" ] = "Bruxelles-Hal-Vilvorde"
+
+# ==============================================================================
+# CHECK CONSTITUENCIES
+# ==============================================================================
 
 # Province_du_Brabant_flamand
 y[ y %in% c("Brabant flamand") ] = "Province_du_Brabant_flamand"
@@ -134,6 +138,22 @@ y[ y %in% c("Namur", "Namur-Dinant-Philippeville", "Dinant-Philippeville") ] = "
 table(y[ !grepl("_", y)], exclude = NULL)
 deputes$constituency = y
 
+cat("Checking constituencies,", sum(is.na(deputes$constituency)), "missing...\n")
+for (i in na.omit(unique(deputes$constituency))) {
+  
+  g = GET(paste0("https://", meta[ "lang" ], ".wikipedia.org/wiki/", i))
+  
+  if (status_code(g) != 200)
+    cat("Missing Wikipedia entry:", i, "\n")
+  
+  g = xpathSApply(htmlParse(g), "//title", xmlValue)
+  g = gsub("(.*) — Wikipédia(.*)", "\\1", g)
+  
+  if (gsub("\\s", "_", g) != i)
+    cat("Discrepancy:", g, "(WP) !=", i ,"(data)\n")
+  
+}
+
 deputes$sexe = str_extract(deputes$bio, "Député(e)?")
 deputes$sexe[ deputes$nom == "Juliette Boulet" ] = "Députée" # Flemish text
 deputes$sexe[ deputes$nom == "Paul Meeus" ] = "Député" # typo
@@ -159,9 +179,36 @@ deputes$annee_naissance[ deputes$nom == "Magda Raemaekers" ] = 1947 # Wikipedia 
 deputes$annee_naissance[ deputes$nom == "Frédéric Daerden" ] = 1970
 deputes$annee_naissance[ deputes$nom == "Georges Dallemagne" ] = 1958
 deputes$annee_naissance[ deputes$nom == "Frank Wilrycx" ] = 1965
+deputes$annee_naissance[ deputes$nom == "Koen Metsu" ] = 1981
+deputes$annee_naissance = as.integer(deputes$annee_naissance)
 
-deputes$url = gsub("(.*)key=(.*)", "\\2", deputes$url)
-deputes$url = gsub("(\\d+)&(.*)", "\\1", deputes$url)
+# full URL
+deputes$url = paste0("http://www.lachambre.be/kvvcr/", deputes$url)
+
+# ============================================================================
+# QUALITY CONTROL
+# ============================================================================
+
+# - might be missing: born (int of length 4), constituency (chr),
+#   photo (chr, folder/file.ext)
+# - never missing: sex (chr, F/M), nyears (int), url (chr, URL),
+#   party (chr, mapped to colors)
+
+cat("Missing", sum(is.na(deputes$annee_naissance)), "years of birth\n")
+stopifnot(is.integer(deputes$annee_naissance) & 
+            nchar(deputes$annee_naissance) == 4 | is.na(deputes$annee_naissance))
+
+cat("Missing", sum(is.na(deputes$constituency)), "constituencies\n")
+stopifnot(is.character(deputes$constituency))
+
+cat("Missing", sum(is.na(deputes$photo)), "photos\n")
+stopifnot(is.character(deputes$photo) &
+            grepl("^photos(_\\w{2})?/(.*)\\.\\w{3}", deputes$photo) | is.na(deputes$photo))
+
+stopifnot(!is.na(deputes$sexe) & deputes$sexe %in% c("F", "M"))
+# stopifnot(!is.na(deputes$nyears) & is.integer(deputes$nyears)) ## computed on the fly
+stopifnot(!is.na(deputes$url) & grepl("^http(s)?://(.*)", deputes$url))
+stopifnot(deputes$party %in% names(colors))
 
 #
 # scrape dossiers in legislatures 47-54
@@ -170,10 +217,10 @@ deputes$url = gsub("(\\d+)&(.*)", "\\1", deputes$url)
 root = "http://www.dekamer.be/kvvcr/showpage.cfm?section=/flwb&language=fr&cfm=Listdocument.cfm?legislat="
 cat("Scraping raw lower chamber data...\n")
 
-for(i in 47:54) {
+for (i in 47:54) {
   
   file = paste0("data/dossiers-ch", i, ".csv")
-  if(!file.exists(file)) {
+  if (!file.exists(file)) {
     
     cat("Scraping legislature", i, "... ")
     
@@ -183,7 +230,7 @@ for(i in 47:54) {
     h = xpathSApply(h, "//a[@class='link']/@href")
     
     cat(length(h), "pages\n")
-    for(j in h) {
+    for (j in h) {
       
       hh = htmlParse(paste0("http://www.dekamer.be/kvvcr/", j))
       hh = xpathSApply(hh, "//div[@class='linklist_0']/a/@href")
@@ -192,11 +239,11 @@ for(i in 47:54) {
       cat("Page", sprintf("%3.0f", which(h == j)),
           "scraping", sprintf("%3.0f", length(hh)), "dossiers\n")
       
-      for(k in hh) {
+      for (k in hh) {
         
         t = paste0("http://www.dekamer.be/kvvcr/showpage.cfm?section=flwb&language=fr&leftmenu=none&cfm=/site/wwwcfm/search/fiche.cfm?ID=", i, "K", k, "&db=FLWB&legislat=", i)
         t = try(readHTMLTable(t, which = 1, header = FALSE, stringsAsFactors = FALSE))
-        if(!"try-error" %in% class(t)) {
+        if (!"try-error" %in% class(t)) {
           
           names(t) = c("variable", "value")
           t$variable = str_clean(t$variable)
@@ -228,11 +275,11 @@ for(i in 47:54) {
 # parse sponsors from raw dossiers
 
 dir = dir("data", pattern = "dossiers-ch\\d{2}.csv", full.names = TRUE)
-for(k in dir) {
+for (k in dir) {
   
   file = gsub("dossiers", "sponsors", k)
   
-  if(!file.exists(file)) {
+  if (!file.exists(file)) {
     
     cat("\nParsing Chamber, legislature", gsub("\\D", "", k), "...\n")
     cat("Building", file)
@@ -245,13 +292,13 @@ for(k in dir) {
     
     cat(" :", length(uids), "dossiers\n")
     # sink(gsub("csv$", "log", file))
-    for(i in uids) {
+    for (i in uids) {
       
       dd = subset(d, uid == i & !grepl("^NL|NL$", d$variable))
       # cat("Parsing dossier", i)
       
       status = dd$value[which(grepl("Etat d'avancement", dd$variable)) + 1]
-      if(!length(status))
+      if (!length(status))
         status = NA
       
       topic = unique(dd$value[which(grepl("Eurovoc", dd$variable)) + 2])
@@ -261,25 +308,27 @@ for(k in dir) {
       dd = dd[ min(sd):nrow(dd), ]
       
       sd = c(1, which(dd$variable == "Document(s) suivant(s)"))
-      if(length(sd) < 2)
+      if (length(sd) < 2)
         sd = c(sd, nrow(dd))
       
-      for(n in 1:(length(sd) - 1)) {
+      for (n in 1:(length(sd) - 1)) {
         
         ddd = dd[ sd[ n ]:sd[ n + 1 ], ]
         type = ddd$value[ which(ddd$variable == "Type")[1] + 1 ]
         
         au = which(ddd$value == "AUTEUR")
-        if(length(au)) {
-          au = sapply(au, function(x) paste(ddd$value[ x + 2 ], ddd$value[ x + 1 ], "[", ddd$value[ x + 3 ], "]"))
+        if (length(au)) {
+          au = sapply(au, function(x)
+            paste(ddd$value[ x + 2 ], ddd$value[ x + 1 ], "[", ddd$value[ x + 3 ], "]"))
           au = unique(au)
         } else {
           au = NA
         }
         
         cs = which(ddd$value == "SIGNATAIRE")
-        if(length(cs)) {
-          cs = sapply(cs, function(x) paste(ddd$value[ x + 2 ], ddd$value[ x + 1 ], "[", ddd$value[ x + 3 ], "]"))
+        if (length(cs)) {
+          cs = sapply(cs, function(x)
+            paste(ddd$value[ x + 2 ], ddd$value[ x + 1 ], "[", ddd$value[ x + 3 ], "]"))
           cs = unique(cs)
         } else {
           cs = NA
@@ -289,7 +338,7 @@ for(k in dir) {
         a = a[ !grepl("ZZZ|0", a) ]
         
         # subset to cosponsored legislation
-        if(length(a) > 1) {
+        if (length(a) > 1) {
           
           # cat("\n -", type, ":", length(au), "author(s)",
           #     ifelse(!length(na.omit(cs)), "",
@@ -303,7 +352,7 @@ for(k in dir) {
                                 authors = paste0(na.omit(au[ !grepl("ZZZ|0", au) ]), collapse = ";"),
                                 cosponsors = paste0(na.omit(cs[ !grepl("ZZZ|0", cs) ]), collapse = ";")))
           
-        } else if(length(a) == 1) {
+        } else if (length(a) == 1) {
           
           # cat("\n -", type, ":", a)
           authors = rbind(authors,
