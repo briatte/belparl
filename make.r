@@ -6,10 +6,23 @@ source("parties.r")
 
 # folders
 
-dir.create("data"      , showWarnings = FALSE)
-dir.create("photos_ch" , showWarnings = FALSE)
-dir.create("photos_se" , showWarnings = FALSE)
-dir.create("plots"     , showWarnings = FALSE)
+dir.create("data"  , showWarnings = FALSE)
+dir.create("plots" , showWarnings = FALSE)
+
+if (file.exists("photos_ch.zip"))
+  unzip("photos_ch.zip")
+
+dir.create("photos_ch", showWarnings = FALSE)
+
+if (file.exists("photos_se.zip"))
+  unzip("photos_se.zip")
+
+dir.create("photos_se", showWarnings = FALSE)
+
+if (file.exists("raw.zip"))
+  unzip("raw.zip")
+
+dir.create("raw", showWarnings = FALSE)
 
 # parameters
 
