@@ -15,9 +15,9 @@ for (k in 54:48) { # excluding C. 47
   
   cat(":", nrow(data), "cosponsored documents, ")
   
-  #
-  # directed edge list
-  #
+  # ============================================================================
+  # DIRECTED EDGE LIST
+  # ============================================================================
   
   edges = lapply(data$sponsors, function(d) {
     
@@ -29,9 +29,9 @@ for (k in 54:48) { # excluding C. 47
     
   }) %>% bind_rows
   
-  #
-  # edge weights
-  #
+  # ============================================================================
+  # EDGE WEIGHTS
+  # ============================================================================
   
   # first author self-loops, with counts of cosponsors
   self = subset(edges, i == j)
@@ -72,9 +72,9 @@ for (k in 54:48) { # excluding C. 47
   
   cat(nrow(edges), "edges, ")
   
-  #
-  # directed network
-  #
+  # ============================================================================
+  # DIRECTED NETWORK
+  # ============================================================================
   
   n = network(edges[, 1:2 ], directed = TRUE)
 
@@ -89,6 +89,10 @@ for (k in 54:48) { # excluding C. 47
   
   n %n% "n_cosponsored" = nrow(data)
   n %n% "n_sponsors" = table(subset(b, legislature == k & type == "PROPOSITION DE LOI")$n_a)
+
+  # ============================================================================
+  # VERTEX-LEVEL ATTRIBUTES
+  # ============================================================================
 
   n_au = as.vector(n_au[ network.vertex.names(n) ])
   n %v% "n_au" = ifelse(is.na(n_au), 0, n_au)
@@ -110,7 +114,7 @@ for (k in 54:48) { # excluding C. 47
 
   set.edge.attribute(n, "source", as.character(edges[, 1])) # cosponsor
   set.edge.attribute(n, "target", as.character(edges[, 2])) # first author
-    
+  
   set.edge.attribute(n, "raw", edges$raw) # raw edge counts
   set.edge.attribute(n, "nfw", edges$nfw) # Newman-Fowler weights
   set.edge.attribute(n, "gsw", edges$gsw) # Gross-Shalizi weights
@@ -156,9 +160,9 @@ for (k in 54:48) { # excluding C. 47
   })
   n %v% "nyears" = s[ network.vertex.names(n), "nyears" ] %>% as.integer
   
-  #
-  # network plot
-  #
+  # ============================================================================
+  # SAVE PLOTS
+  # ============================================================================
   
   if (plot) {
         
@@ -169,17 +173,17 @@ for (k in 54:48) { # excluding C. 47
     
   }
   
-  #
-  # save objects
-  #
+  # ============================================================================
+  # SAVE OBJECTS
+  # ============================================================================
   
   assign(paste0("net_be_ch", years[ as.character(k) ]), n)
   assign(paste0("edges_be_ch", years[ as.character(k) ]), edges)
   assign(paste0("bills_be_ch", years[ as.character(k) ]), data)
   
-  #
-  # export gexf
-  #
+  # ============================================================================
+  # SAVE GEXF
+  # ============================================================================
   
   if (gexf)
     save_gexf(n, paste0("net_be_ch", years[ as.character(k) ], "-", years[ as.character(k + 1) ]),
@@ -189,5 +193,3 @@ for (k in 54:48) { # excluding C. 47
 
 if (gexf)
   zip("net_be_ch.zip", files = dir(pattern = "^net_be_ch\\d{4}-\\d{4}\\.gexf$"))
-
-# kthxbye

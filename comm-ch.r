@@ -3,7 +3,12 @@
 deputes = subset(deputes, legislature == 54)
 deputes$uid = str_extract(deputes$url, "key=\\w?\\d+")
 
-h = htmlParse("http://www.lachambre.be/kvvcr/showpage.cfm?section=/none&language=fr&cfm=/site/wwwcfm/comm/LstCom.cfm")
+f = "raw/comm-ch-54.html"
+if(!file.exists(f))
+  download.file("http://www.lachambre.be/kvvcr/showpage.cfm?section=/none&language=fr&cfm=/site/wwwcfm/comm/LstCom.cfm", f, mode = "wb", quiet = TRUE)
+
+h = htmlParse(f)
+
 comm = data.frame(
   y = 54,
   n = xpathSApply(h, "//a[contains(@href, '?com=')]", xmlValue),

@@ -10,9 +10,9 @@ for (k in 53:49) { # too few bills in S. 54
   
   cat(":", nrow(data), "cosponsored documents, ")
   
-  #
-  # directed edge list
-  #
+  # ============================================================================
+  # DIRECTED EDGE LIST
+  # ============================================================================
   
   edges = lapply(data$authors, function(d) {
     
@@ -37,9 +37,9 @@ for (k in 53:49) { # too few bills in S. 54
     
   }) %>% bind_rows
   
-  #
-  # edge weights
-  #
+  # ============================================================================
+  # EDGE WEIGHTS
+  # ============================================================================
   
   # first author self-loops, with counts of cosponsors
   self = subset(edges, i == j)
@@ -80,9 +80,9 @@ for (k in 53:49) { # too few bills in S. 54
   
   cat(nrow(edges), "edges, ")
   
-  #
-  # directed network
-  #
+  # ============================================================================
+  # DIRECTED NETWORK
+  # ============================================================================
   
   n = network(edges[, 1:2 ], directed = TRUE)
   
@@ -98,7 +98,11 @@ for (k in 53:49) { # too few bills in S. 54
 
   n %n% "n_cosponsored" = nrow(data)
   n %n% "n_sponsors" = table(subset(bills, legislature == k)$n_au)
-  
+
+  # ============================================================================
+  # VERTEX-LEVEL ATTRIBUTES
+  # ============================================================================
+
   n_au = as.vector(n_au[ network.vertex.names(n) ])
   n %v% "n_au" = ifelse(is.na(n_au), 0, n_au)
   
@@ -131,9 +135,9 @@ for (k in 53:49) { # too few bills in S. 54
   set.edge.attribute(n, "nfw", edges$nfw) # Newman-Fowler weights
   set.edge.attribute(n, "gsw", edges$gsw) # Gross-Shalizi weights
     
-  #
-  # network plot
-  #
+  # ============================================================================
+  # SAVE PLOTS
+  # ============================================================================
   
   if (plot) {
     
@@ -144,17 +148,17 @@ for (k in 53:49) { # too few bills in S. 54
     
   }
   
-  #
-  # save objects
-  #
+  # ============================================================================
+  # SAVE OBJECTS
+  # ============================================================================
   
   assign(paste0("net_be_se", years[ as.character(k) ]), n)
   assign(paste0("edges_be_se", years[ as.character(k) ]), edges)
   assign(paste0("bills_be_se", years[ as.character(k) ]), data)
   
-  #
-  # export gexf
-  #
+  # ============================================================================
+  # SAVE GEXF
+  # ============================================================================
   
   if (gexf)
     save_gexf(n, paste0("net_be_se", years[ as.character(k) ], "-", years[ as.character(k + 1) ]),
@@ -164,5 +168,3 @@ for (k in 53:49) { # too few bills in S. 54
 
 if (gexf)
   zip("net_be_se.zip", files = dir(pattern = "^net_be_se\\d{4}-\\d{4}\\.gexf$"))
-
-# kthxbye
