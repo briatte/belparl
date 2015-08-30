@@ -4,7 +4,7 @@ deputes = subset(deputes, legislature == 54)
 deputes$uid = str_extract(deputes$url, "key=\\w?\\d+")
 
 f = "raw/comm-ch-54.html"
-if(!file.exists(f))
+if (!file.exists(f))
   download.file("http://www.lachambre.be/kvvcr/showpage.cfm?section=/none&language=fr&cfm=/site/wwwcfm/comm/LstCom.cfm", f, mode = "wb", quiet = TRUE)
 
 h = htmlParse(f)
