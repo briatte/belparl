@@ -309,7 +309,7 @@ for (i in b$photo) {
   if (!file.exists(photo))
     try(download.file(paste0("http://www.senate.be/www/?MItabObj=persoon&MIcolObj=foto&MInamObj=persoonid&MIvalObj=",
                              i, "&MItypeObj=image/gif"), photo, mode = "wb", quiet = TRUE), silent = TRUE)
-  if (!file.info(photo)$size) {
+  if (!file.exists(photo) || !file.info(photo)$size) {
     file.remove(photo) # will warn if missing
     b$photo[ b$photo == i ] = NA
   } else {
